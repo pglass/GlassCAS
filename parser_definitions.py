@@ -1,9 +1,8 @@
 '''
-parser_defintions.py -- contains definitions parsing modules
+parser_definitions.py
 '''
 
-import cmath
-import math
+import cmath, math
 
 WHITESPACE_CHARS = list("\t\n\x0b\x0c\r ")
 LPARENS = list("([")
@@ -13,17 +12,21 @@ REAL_NUMBER_CHARS = list("0123456789.")
 NUMBER_CHARS = REAL_NUMBER_CHARS + ["j"] # Use 'j' as sqrt(-1)
 
 # Define valid single-letter variables
-VARIABLES = list("abcdefghiklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+VARIABLES = list("abcd" + "fghi" + "klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 CONSTANTS = {
     'e' : cmath.e,
     'pi': cmath.pi
 }
 
+# operator to represent implicit multiplication
+IMPLICIT_MULT = "@"
+
 OPERATORS = [
     "+", 
     "-", 
-    "*", 
+    "*",
+    IMPLICIT_MULT,
     "/", 
     "^", # exponentiation
     "%", # modulus
@@ -46,11 +49,12 @@ FUNCTIONS = {
     NEG_OP      : lambda x: -x,
 }
 
-# Define precedences.
+# Define operator precedences.
 PRECEDENCE = {
     '=' : 0,
     '+' : 1, '-' : 1,
     '*' : 2, '/' : 2, '%' : 2,
+    IMPLICIT_MULT : 3.5,
     '^' : 4,
     '!' : 5
 }
@@ -73,3 +77,8 @@ ASSOCIATIVITY.update((f, LEFT) for f in OPERATORS)
 ASSOCIATIVITY.update((f, RIGHT) for f in FUNCTIONS)
 ASSOCIATIVITY['^'] = RIGHT
 ASSOCIATIVITY['='] = LEFT
+
+# Define operators which we know may be abmiguous
+AMBIGUOUS_OPS = {
+    "-" : ("-", NEG_OP)
+}

@@ -4,94 +4,23 @@ This happens in 3 steps:
   1. Tokenize
   2. Convert to postfix/RPN
   3. Construct tree object from RPN
-  
+
+This module also includes the node class which is used to form
+a tree out of the parse input.
+
 The module is 'rigid' in that every operator, variable, constant
 and function identifier has to be unique.
 '''
 
 from parser_definitions import *
-
-def remove_whitespace(expr):
-    return "".join(e for e in expr if e not in WHITESPACE_CHARS)
-
-def extract_complex_number(expr, start):
-    '''
-    Grab the number string in expression that begins at index start 
-    (it assumes a number string exists there).
-    
-    A complex number is one of the following forms:
-        <real_number>
-        <real_number>j
-        j<real_number>
-    '''
-
-    if expr[start] == 'j' and start + 1 < len(expr):
-        return extract_real_number(expr, start + 1) + 'j'
-    elif expr[start] == 'j':
-        return 'j'
-        
-    real_num = extract_real_number(expr, start)
-    if (start + len(real_num) < len(expr) and
-        expr[start + len(real_num)] == 'j'
-        ):
-        return real_num + 'j'
-    else:
-        return real_num
-    
-def extract_real_number(expr, start):
-    ''' 
-    Grab the real number in expression that begins at index start.
-    The number may be an int, long, or float.
-    
-    Raises a SyntaxError if a float has too many decimal points,
-    or if the number consists of only decimal points 
-    '''
-    
-    token = ''
-    i = start
-    
-    found_decimal_point = False
-    while i < len(expr) and expr[i] in REAL_NUMBER_CHARS:
-        if found_decimal_point and expr[i] == '.':
-            raise SyntaxError("Too many decimal points: " + expr[start:i+1])
-        elif expr[i] == '.':
-            found_decimal_point = True
-            
-        token += expr[i]
-        i += 1
-    if token == '.':
-        raise SyntaxError("Dangling decimal point: " + 
-                  expr[max(0, start - 2) : min(len(expr), start + 2)])
-    return token
-
-def get_from_list(expr, start, value_list):
-    '''
-    Return an identifier beginning at index start,
-    where the identifier is something in value_list.
-    Returns None if no such identifier is found.
-    
-    This is used in tokenize to grab functions and constants.
-    '''
-    
-    token = ''
-    i, j = start, start
-    
-    while j < len(expr) and expr[i:j+1] in [f[:j+1 - i] for f in value_list]:
-        token = expr[i:j+1]
-        if token in value_list: # in case of "pipi" or "cossin"
-            return token
-            
-        j += 1
-            
-    return None
+from parser_util import *
 
 def tokenize(expr):
     '''
-    Split expr into a list of tokens, where 
-    all tokens are left as strings.
+    Split expr into a list of tokens, where all tokens are left as strings.
     
-    A token is something in OPERATORS, FUNCTIONS,
-    VARIABLES, CONSTANTS, or a positive number.
+    A token is something in OPERATORS, FUNCTIONS, VARIABLES, CONSTANTS,
+    or a (positive) number.
     
     Raises a SyntaxError if:
         1. An undefined symbol is encountered, like '$' or '@'
@@ -106,7 +35,7 @@ def tokenize(expr):
         token = None
         
         if expr[i] in NUMBER_CHARS:
-            token = extract_complex_number(expr, i)
+            token = read_complex_number(expr, i)
         if token == None:
             token = get_from_list(expr, i, FUNCTIONS)
         if token == None:
@@ -121,37 +50,11 @@ def tokenize(expr):
         i += len(token)
         
     return result
-   
-def get_number(value):
-    ''' 
-    Return a complex, float, or long if value is or represents an
-    instance of one of those types. Otherwise, return None.
-    '''
-    
-    if value.__class__ in [int, float, long, complex]:
-        return value
-    
-    try:
-        return long(value)
-    except ValueError:
-        pass
-    
-    try:
-        return float(value)
-    except ValueError:
-        pass
-        
-    try:
-        return complex(value)
-    except ValueError:
-        pass
-        
-    return None
  
 def to_RPN(tokens):
     ''' 
     Convert the tokenized infix expression tokens to an RPN expression
-    using Dijsktra's Shunting-yard algorithm. 
+    using Dijsktra's Shunting-yard algorithm.
     
     This will raise a SyntaxError for mismatched parentheses.
     '''
@@ -166,12 +69,12 @@ def to_RPN(tokens):
             while len(stack) > 0 and stack[-1] in OPERATORS + FUNCTIONS.keys():
                 if (ASSOCIATIVITY[token] == LEFT and
                     PRECEDENCE[token] <= PRECEDENCE[stack[-1]]
-                    ):
+                   ):
                     
                     output.append(stack.pop())
                 elif (ASSOCIATIVITY[token] == RIGHT and 
                       PRECEDENCE[token] < PRECEDENCE[stack[-1]]
-                      ):
+                     ):
                     output.append(stack.pop())
                 else:  
                     break
@@ -201,8 +104,13 @@ def compute(function, operands):
     '''
     Apply the function to operands and return the result.
     
-    Raises SyntaxErrors for unknown functions, and for too few operands.
-    Raises some error if the operand is of the wrong type.
+    Raises a SyntaxError for unknown functions, and for too few operands.
+    Raises other errors if the operand is an invalid input. These bubble up
+        from Python's implementations of the functions/operators, and include:
+            ValueError (ex: "(-4)!")
+            ZeroDivisionError (ex: "4/0")
+            TypeError (ex: "floor(1+j)")
+            (I need to find and list all possible error types here...)
     '''
 
     if function not in OPERATORS + FUNCTIONS.keys():
@@ -219,8 +127,8 @@ def compute(function, operands):
         return reduce(lambda a, b: a + b, operands)
     if function == '-':
         return operands[0] - operands[1]
-    if function == '*':
-        return operands[0] * operands[1]
+    if function in ['*', IMPLICIT_MULT]:
+        return reduce(lambda a, b: a * b, operands)
     if function == '/':
         return float(operands[0]) / operands[1]
     if function == '%':
@@ -245,6 +153,10 @@ class node(object):
             self.children = []
 
     def __str__(self):
+        '''
+        Produce a string representation of this tree's structure
+        '''
+        
         result = ''
                 
         result += str(self.value)
@@ -254,14 +166,13 @@ class node(object):
             for line in str(child).split("\n"):
                 result += "  " + line + "\n"
         return result[:-1]
-    
                         
     def reduce(self, replace_constants = False):
         ''' 
-        Computes the value of this tree's expression.
+        Computes the value of this tree.
         
         replace_constants = True will replace constant identifiers 
-        with their numeric values, e.g., 'e' becomes 2.7182818...
+            with their numeric values, e.g., 'e' becomes 2.7182818...
         replace_constants = False will leave 'e' in the tree.
         '''
         operands = []
@@ -278,7 +189,6 @@ class node(object):
                 for c in operands:
                     self.children.remove(c)
 
-           
 def to_tree(rpn_expr):
     ''' 
     Parse rpn_expr to a tree where rpn_expr is some list of tokens
@@ -287,16 +197,14 @@ def to_tree(rpn_expr):
         
     Then conversion to a tree only requires knowing the number of operands
     for each operator:
-        - Pass over the RPN expression. 
         - Push numbers to a stack as we encounter them. 
-        - When we see a function/operator, we will have just pushed
-          its operands to the stack. Pop off the required number of
+        - When we see a function/operator, pop off the required number of
           operands and form a tree with the operator as the root and
           operands as leaves. Push this tree onto the stack.
     By the end, the stack should have only one node, which is the root of
     the tree representing the expression.
 
-    This will raise SyntaxErrors if there are not enough operands
+    This will raise a SyntaxError if there are not enough operands
     for an operator/function, or if it otherwise fails to parse 
     the input.
     '''
@@ -330,3 +238,4 @@ def to_tree(rpn_expr):
         raise SyntaxError("RPN-to-tree conversion failed.")
 
     return stack.pop()
+ 
