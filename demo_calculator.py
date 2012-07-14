@@ -4,8 +4,8 @@ demo_calculator.py -- A simple calculator.
 See parser_definitions.py for supported functions, operators, and constants.
 '''
 
-import argparse 
-import rigid_parsing, liberal_parsing
+import sys, argparse, traceback
+from parsing import rigid_parsing, liberal_parsing
             
 if __name__ == '__main__':            
     parser = argparse.ArgumentParser()
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         tree, reduced_tree = None, None
         try:
             tokens = rigid_parsing.tokenize(uin)
-            fixed_input = liberal_parsing.interpret_and_correct_input(list(tokens))
+            fixed_input = liberal_parsing.apply_transformations(list(tokens))
             rpn = rigid_parsing.to_RPN(fixed_input)
             tree = rigid_parsing.to_tree(rpn)
 

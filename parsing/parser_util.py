@@ -1,5 +1,7 @@
 '''
 parser_util.py
+
+Used in rigid_parsing.py and liberal_parsing.py
 '''
 
 from parser_definitions import *
@@ -9,8 +11,8 @@ def remove_whitespace(expr):
 
 def read_complex_number(expr, start):
     '''
-    Return the complex number string in expression that begins at index start 
-    (this assumes a number string exists there).
+    Return the number string in expression that begins at index start 
+    (it assumes a number string exists there).
     
     A complex number is one of the following forms:
         <real_number>
