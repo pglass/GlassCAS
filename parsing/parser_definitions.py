@@ -4,12 +4,12 @@ parser_definitions.py
 
 import cmath, math
 
-WHITESPACE_CHARS = list("\t\n\x0b\x0c\r ")
-LPARENS = list("(")
-RPARENS = list(")")
+WHITESPACE_CHARS = list('\t\n\x0b\x0c\r ')
+LPARENS = list('(')
+RPARENS = list(')')
 
-REAL_NUMBER_CHARS = list("0123456789.")
-NUMBER_CHARS = REAL_NUMBER_CHARS + ["j"] # Use 'j' as sqrt(-1)
+REAL_NUMBER_CHARS = list('0123456789.')
+NUMBER_CHARS = REAL_NUMBER_CHARS + ['j'] # Use 'j' as sqrt(-1)
 
 CONSTANTS = {
     'e' : cmath.e,
@@ -17,11 +17,11 @@ CONSTANTS = {
 }
 
 # Define valid single-letter variables
-# (notice that constants and variables cannot overlap)
-VARIABLES = list("abcd" + "fghi" + "klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+# (notice that no letter can represent both a constant and a variable)
+VARIABLES = list('abcd' + 'fghi' + 'klmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ')
 
 # operator to represent implicit multiplication
-IMPLICIT_MULT = "@"
+IMPLICIT_MULT = '@'
 
 # negation operator (different than subtraction)
 NEG_OP = '`'
@@ -39,14 +39,15 @@ PREFIX_FUNCTION_MAP = {
 }
 
 INFIX_FUNCTIONS = [
-    "+", 
-    "-", 
-    "*",
+    '+', 
+    '-', 
+    '*',
     IMPLICIT_MULT,
-    "/", 
-    "^", # exponentiation
-    "%", # modulus
-    "=", # equation operator (treating this as a function simplifies parsing)  
+    '/', 
+    '^', # exponentiation
+    '%', # modulus
+    '=', # equation operator
+    ':=', # 'defined to be' operator
 ]
 
 POSTFIX_FUNCTION_MAP = {
@@ -60,6 +61,7 @@ ALL_FUNCTIONS = (list(PREFIX_FUNCTION_MAP.keys()) +
 # Define operator precedences.
 PRECEDENCE = {
     '=' : 0,
+    ':=' : 0,
     '+' : 1,
     '-' : 1,
     '*' : 2,
@@ -89,3 +91,4 @@ ASSOCIATIVITY.update((f, LEFT) for f in POSTFIX_FUNCTION_MAP.keys())
 ASSOCIATIVITY.update((f, RIGHT) for f in PREFIX_FUNCTION_MAP.keys())
 ASSOCIATIVITY['^'] = RIGHT
 ASSOCIATIVITY['='] = LEFT
+ASSOCIATIVITY[':='] = LEFT
