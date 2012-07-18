@@ -14,8 +14,8 @@ The module is 'rigid' in that every operator, variable, constant
 and function identifier has to be unique.
 '''
 
-from parser_definitions import *
-from parser_util import *
+from parsing.parser_definitions import *
+from parsing.parser_util import *
 
 def tokenize(expr):
     '''
@@ -50,7 +50,7 @@ def tokenize(expr):
         if token == None and expr[i] in VARIABLES + LPARENS + RPARENS:
             token = expr[i]
         if token == None:
-            raise SyntaxError("Unknown/invalid symbol " + `expr[i]`)
+            raise SyntaxError("Unknown/invalid symbol " + repr(expr[i]))
                 
         result.append(token)
         i += len(token)
@@ -69,7 +69,7 @@ def to_RPN(tokens):
     stack = []
     
     for token in tokens:
-        if get_number(token) != None or token in VARIABLES + CONSTANTS.keys():
+        if get_number(token) != None or token in VARIABLES + list(CONSTANTS.keys()):
             output.append(token)
         elif token in ALL_FUNCTIONS:
             while len(stack) > 0 and stack[-1] in ALL_FUNCTIONS:
@@ -117,40 +117,39 @@ def to_RPN_debug(tokens):
     stack = []
     
     for token in tokens:
-        print
-        print "SEE {0}".format(token)
+        print("\nSEE {0}".format(token))
         if get_number(token) != None or token in VARIABLES + CONSTANTS.keys():
-            print "push {0} to output".format(token)
+            print("push {0} to output".format(token))
             output.append(token)
         elif token in ALL_FUNCTIONS:
-            print "push operators/functions from stack to output"
+            print("push operators/functions from stack to output")
             while len(stack) > 0 and stack[-1] in ALL_FUNCTIONS:
                 if (ASSOCIATIVITY[token] == LEFT and
                     PRECEDENCE[token] <= PRECEDENCE[stack[-1]]
                     ):
                     
                     tmp = stack.pop()
-                    print "  push {0} to output".format(tmp)
+                    print("  push {0} to output".format(tmp))
                     output.append(tmp)
                 elif (ASSOCIATIVITY[token] == RIGHT and 
                       PRECEDENCE[token] < PRECEDENCE[stack[-1]]
                       ):
 
                     tmp = stack.pop()
-                    print "  push {0} to output".format(tmp)
+                    print("  push {0} to output".format(tmp))
                     output.append(tmp)
                 else:  
                     break
-            print "push {0} to stack".format(token)
+            print("push {0} to stack".format(token))
             stack.append(token)
         elif token in LPARENS:
-            print "push {0} to stack".format(token)
+            print("push {0} to stack".format(token))
             stack.append(token)
         elif token in RPARENS:
-            print "see {0}, move all not LPARENS to stack".format(token)
+            print("see {0}, move all not LPARENS to stack".format(token))
             while len(stack) > 0 and stack[-1] not in LPARENS:
                 tmp = stack.pop()
-                print "  push {0} to stack".format(token)
+                print("  push {0} to stack".format(token))
                 output.append(tmp)
             
             if len(stack) == 0 or stack[-1] not in LPARENS:
@@ -160,19 +159,19 @@ def to_RPN_debug(tokens):
                 stack.pop()
             if len(stack) > 0 and stack[-1] in PREFIX_FUNCTIONS_MAP.keys():
                 output.append(stack.pop())
-        print "stack: {0}".format(stack)
-        print "output: {0}".format(output)
+        print("stack: {0}".format(stack))
+        print("output: {0}".format(output))
         
-    print "moving all remaining on stack to output"
+    print("moving all remaining on stack to output")
     while len(stack) > 0:
         if stack[-1] in LPARENS + RPARENS:
             raise SyntaxError("Mismatched parentheses")
         tmp = stack.pop()
-        print "  push {0} to output".format(tmp)        
+        print("  push {0} to output".format(tmp))
         output.append(tmp)
 
-    print "stack: {0}".format(stack)
-    print "output: {0}".format(output)
+    print("stack: {0}".format(stack))
+    print("output: {0}".format(output))
             
     return output 
 
@@ -182,11 +181,11 @@ def compute(function, operands):
     
     Raises a SyntaxError for unknown functions, and for too few operands.
     Raises other errors if the operand is an invalid input. These bubble up
-        from Python's implementations of the functions/operators, and include:
-            ValueError (ex: "(-4)!")
-            ZeroDivisionError (ex: "4/0")
-            TypeError (ex: "floor(1+j)")
-            (I need to find and list all possible error types here...)
+    from Python's implementations of the functions/operators, and include:
+        ValueError (ex: "(-4)!")
+        ZeroDivisionError (ex: "4/0")
+        TypeError (ex: "floor(1+j)")
+        (I need to find and list all possible error types here...)
     '''
 
     if function not in ALL_FUNCTIONS:
@@ -200,11 +199,15 @@ def compute(function, operands):
             return f(operands[0], operands[1])
     
     if function == '+':
-        return reduce(lambda a, b: a + b, operands)
+        return sum(operands)
     if function == '-':
         return operands[0] - operands[1]
     if function in ['*', IMPLICIT_MULT]:
-        return reduce(lambda a, b: a * b, operands)
+        prod = 1
+        for val in operands:
+            prod *= val
+        return prod
+        # return reduce(lambda a, b: a * b, operands)
     if function == '/':
         return float(operands[0]) / operands[1]
     if function == '%':
@@ -238,7 +241,7 @@ class node(object):
         result = ''
         
         for child in self.children:
-            result += `child` + " "
+            result += repr(child) + " "
                     
         return result + str(self.value)
           
@@ -397,12 +400,12 @@ def to_tree(rpn_expr):
         
         if get_number(token.value) != None:
             stack.append(token)
-        elif str(token.value) in VARIABLES + CONSTANTS.keys():
+        elif str(token.value) in VARIABLES + list(CONSTANTS.keys()):
             stack.append(token)
         elif token.value in ALL_FUNCTIONS:
   
             if len(stack) < NUM_OPERANDS[token.value]:
-                raise SyntaxError("Not enough operands for " + `token.value`)
+                raise SyntaxError("Not enough operands for " + repr(token.value))
             
             if NUM_OPERANDS[token.value] == 1:    
                 token.children.append(stack.pop())

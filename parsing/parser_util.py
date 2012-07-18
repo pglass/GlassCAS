@@ -4,7 +4,7 @@ parser_util.py
 Used in rigid_parsing.py and liberal_parsing.py
 '''
 
-from parser_definitions import *
+from parsing.parser_definitions import *
 
 def remove_whitespace(expr):
     return "".join(e for e in expr if e not in WHITESPACE_CHARS)
@@ -61,15 +61,15 @@ def read_real_number(expr, start):
         
 def get_number(value):
     ''' 
-    Return a complex, float, or long if value is or represents an
+    Return a complex, float, or int if value is or represents an
     instance of one of those types. Otherwise, return None.
     '''
     
-    if value.__class__ in [int, float, long, complex]:
+    if value.__class__ in [int, float, complex]:
         return value
     
     try:
-        return long(value)
+        return int(value)
     except ValueError:
         pass
     

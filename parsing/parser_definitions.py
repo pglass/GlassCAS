@@ -53,9 +53,9 @@ POSTFIX_FUNCTION_MAP = {
     '!'         : math.factorial,
 }
 
-ALL_FUNCTIONS = (PREFIX_FUNCTION_MAP.keys() +
+ALL_FUNCTIONS = (list(PREFIX_FUNCTION_MAP.keys()) +
                  INFIX_FUNCTIONS +
-                 POSTFIX_FUNCTION_MAP.keys())
+                 list(POSTFIX_FUNCTION_MAP.keys()))
 
 # Define operator precedences.
 PRECEDENCE = {

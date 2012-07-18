@@ -5,7 +5,8 @@ See parser_definitions.py for supported functions, operators, and constants.
 '''
 
 import sys, argparse, traceback
-from parsing import rigid_parsing, liberal_parsing
+import parsing.rigid_parsing as rigid_parsing
+import parsing.liberal_parsing as liberal_parsing
             
 if __name__ == '__main__':            
     parser = argparse.ArgumentParser()
@@ -19,7 +20,7 @@ if __name__ == '__main__':
 
     ARGS = parser.parse_args()           
     while True:
-        uin = raw_input('>>')
+        uin = input('>>')
         if len(uin) > 1 and uin in 'xxxxxxxx':
             break
         
@@ -34,16 +35,16 @@ if __name__ == '__main__':
             reduced_tree = rigid_parsing.node(tree)
             reduced_tree.reduce(ARGS.replace_constants)
             if not ARGS.verbose:
-                print reduced_tree
+                print(reduced_tree)
         except (SyntaxError, ZeroDivisionError, ValueError, TypeError) as error:
-            print error.message
+            print(error)
         finally:
             if ARGS.verbose:
-                print "Tokens:", tokens
-                print "Fixed input:", fixed_input
-                print "RPN:", rpn
-                print "Tree:"
-                print tree
-                print "Reduce:"
-                print reduced_tree
+                print("Tokens:", tokens)
+                print("Fixed input:", fixed_input)
+                print("RPN:", rpn)
+                print("Tree:")
+                print(tree)
+                print("Reduce:")
+                print(reduced_tree)
                 

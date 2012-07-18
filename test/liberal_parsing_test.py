@@ -1,6 +1,6 @@
 import unittest
-import test_util
-import liberal_parsing_test_cases as lp_cases
+import test.test_util as test_util
+import test.liberal_parsing_test_cases as lp_cases
 from parsing import liberal_parsing
 
 class InsertImplicitMultOpsTestCases(unittest.TestCase):

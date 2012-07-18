@@ -6,4 +6,4 @@ def run_through_cases(obj, cases, func):
     '''
     for key, val in cases:
         actual = func(key)
-        obj.assertEquals(actual, val)
+        obj.assertEqual(actual, val)

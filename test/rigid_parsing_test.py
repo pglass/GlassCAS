@@ -3,8 +3,8 @@ Don't run this. Use GlassCAS/run_tests.py.
 '''
 
 import unittest
-import rigid_parsing_test_cases as rp_cases
-from test_util import run_through_cases
+import test.rigid_parsing_test_cases as rp_cases
+from test.test_util import run_through_cases
 from parsing import rigid_parsing
 
 
@@ -81,7 +81,7 @@ class RPNConversionTestCases(unittest.TestCase):
     def test_bad_inputs(self):
         for key in self.bad_input_cases:
             with self.assertRaises(SyntaxError):
-                print rigid_parsing.to_RPN(key)
+                rigid_parsing.to_RPN(key)
     
 class TreeTestCases(unittest.TestCase):
     '''
@@ -98,14 +98,14 @@ class TreeTestCases(unittest.TestCase):
         self.bad_input_cases     = rp_cases.tree_bad_input_cases
             
     def test_operand_order(self):
-        get_test_result = lambda case : `rigid_parsing.to_tree(case)`
+        get_test_result = lambda case: repr(rigid_parsing.to_tree(case))
         run_through_cases(self, self.operand_order_cases, get_test_result)
     
     def test_reduce_value(self):
         def get_test_result(case):
             tree = rigid_parsing.to_tree(case)
             tree.reduce()
-            return `tree`
+            return repr(tree)
             
         run_through_cases(self, self.reduce_cases, get_test_result)
         
@@ -113,7 +113,7 @@ class TreeTestCases(unittest.TestCase):
         def get_test_result(case):
             tree = rigid_parsing.to_tree(case)
             tree.reduce(replace_constants = True)
-            return `tree`
+            return repr(tree)
         
         run_through_cases(self, self.sub_constants_cases, get_test_result)
     

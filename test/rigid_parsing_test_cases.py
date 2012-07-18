@@ -14,8 +14,8 @@ from parsing.parser_definitions import (
 # rigid_parsing.tokenize test cases
 #
 tokenize_constants_cases = [
-    ("".join(CONSTANTS.keys())  , CONSTANTS.keys()),
-    (" ".join(CONSTANTS.keys()) , CONSTANTS.keys()),
+    ("".join(list(CONSTANTS.keys()))  , list(CONSTANTS.keys())),
+    (" ".join(list(CONSTANTS.keys())) , list(CONSTANTS.keys())),
     ("e"                        , ["e"]),
     ("pi"                       , ["pi"]),
     ("eee"                      , ["e", "e", "e"]),
@@ -252,7 +252,7 @@ tree_reduce_cases = [
     (['x']                  , 'x'),
     
     (['1', '2', '+']        , '3'),
-    (['1.1', '2.3', '-']    , '-1.2'),
+    (['1.1', '2.2', '-']    , '-1.1'),
     (['j', 'j', '*']        , '(-1+0j)'),
     (['5', '4', '/']        , '1.25'),
     (['5', '4', '%']        , '1'),
@@ -261,7 +261,7 @@ tree_reduce_cases = [
     (['1', '2', '+', '3', '+'], '6'),
     (['1', '2', '-', '3', '-'], '-4'),
     (['1', '2', '*', '3', '*'], '6'),
-    (['1', '2', '/', '3', '/'], '0.166666666667'),
+    (['1', '2', '/', '3', '/'], '0.16666666666666666'),
     (['1', '2', '3', '/', '/'], '1.5'),
     (['2', '3', '2', '^', '^'], '512'),
     (['2', '3', '^', '2', '^'], '64'),

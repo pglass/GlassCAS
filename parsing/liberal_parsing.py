@@ -3,8 +3,8 @@ liberal_parsing.py - contains functions to transform some ambiguous
 inputs into a non-ambiguous form(s) that rigid_parsing can handle.
 '''   
 
-from parser_definitions import *
-from parser_util import get_number
+from parsing.parser_definitions import *
+from parsing.parser_util import get_number
 
 def insert_implicit_mult_ops(tokens):
     '''
@@ -40,7 +40,7 @@ def insert_implicit_mult_ops(tokens):
     while i < len(tokens) - 1:
         # check for things on the left of an implicit multiply
         if (get_number(tokens[i]) != None or 
-            tokens[i] in RPARENS + VARIABLES + CONSTANTS.keys() or
+            tokens[i] in RPARENS + VARIABLES + list(CONSTANTS.keys()) or
             tokens[i] in POSTFIX_FUNCTION_MAP.keys()
             ):
             
@@ -48,8 +48,8 @@ def insert_implicit_mult_ops(tokens):
             
             # check for things on the right side
             if (get_number(token) != None or
-                token in LPARENS + VARIABLES + CONSTANTS.keys()
-                ):
+                token in LPARENS + VARIABLES + list(CONSTANTS.keys()
+                )):
                 tokens.insert(i+1, IMPLICIT_MULT)
                 i += 2
             elif token in PREFIX_FUNCTION_MAP.keys():
