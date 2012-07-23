@@ -16,14 +16,18 @@ and function identifier has to be unique.
 
 from parsing.parser_definitions import *
 from parsing.parser_util import *
+import string, numbers
 
 def tokenize(expr):
     '''
-    Split expr into a list of tokens, where all tokens are left as strings.
+    Split expr into a list of tokens.
     
-    A token is something in PREFIX_FUNCTION_MAP, INFIX_FUNTIONS.
-    POSTFIX_FUNCTION_MAP, VARIABLES, or CONSTANTS, or a token
-    can be a (positive) number.
+    A token can be:
+        a. A prefix, infix, or postfix function/operator
+        b. A variable or constant
+        c. A number (int, float, or complex)
+    In cases (a) and (b), the token is an object instantiated using 
+    some class in parser_defintions.py.
     
     Raises a SyntaxError if:
         1. An undefined symbol is encountered
@@ -37,30 +41,53 @@ def tokenize(expr):
     while i < len(expr):
         token = None
         
+        # Attempt to read different types of tokens 
+        # and construct objects out of them.
         if expr[i] in NUMBER_CHARS:
             token = read_complex_number(expr, i)
+            i += len(token)
+            token = get_number(token)
+        # read a function/operator
         if token == None:
-            token = get_from_list(expr, i, PREFIX_FUNCTION_MAP.keys())
+            token = get_from_list(expr, i, OP_CLASS_DICT.keys())
+            try:
+                token = OP_CLASS_DICT[token]()
+                i += len(token)
+            except KeyError:
+                token = None
+        # read a constant
         if token == None:
-            token = get_from_list(expr, i, INFIX_FUNCTIONS)
-        if token == None:
-            token = get_from_list(expr, i, POSTFIX_FUNCTION_MAP.keys())
-        if token == None:
-            token = get_from_list(expr, i, CONSTANTS)
-        if token == None and expr[i] in VARIABLES + LPARENS + RPARENS:
+            token = get_from_list(expr, i, CONST_CLASS_DICT.keys())
+            try:
+                token = CONST_CLASS_DICT[token]()
+                i += len(token)
+            except KeyError:
+                token = None
+        # read a variable or function
+        if token == None and expr[i] in string.ascii_letters:
+            # try to get a function 'f[x,y,...]'
+            token = read_function(expr, i)
+            func_obj = get_user_function(token)
+            if func_obj != None:
+                i += len(token)
+                token = func_obj
+            else:
+                token = Var(expr[i])
+                i += 1
+        if token == None and expr[i] in ['(', ')']:
             token = expr[i]
+            i += 1
         if token == None:
             raise SyntaxError("Unknown/invalid symbol " + repr(expr[i]))
-                
+        
         result.append(token)
-        i += len(token)
         
     return result
- 
+  
 def to_RPN(tokens):
     ''' 
-    Convert the tokenized infix expression tokens to an RPN expression
-    using Dijsktra's Shunting-yard algorithm.
+    Convert the tokenized infix expression tokens to a 
+    postfix/RPN expression using Dijsktra's Shunting-yard algorithm.
     
     This will raise a SyntaxError for mismatched parentheses.
     '''
@@ -69,84 +96,46 @@ def to_RPN(tokens):
     stack = []
     
     for token in tokens:
-        if get_number(token) != None or token in VARIABLES + list(CONSTANTS.keys()):
-            output.append(token)
-        elif token in ALL_FUNCTIONS:
-            while len(stack) > 0 and stack[-1] in ALL_FUNCTIONS:
-                if (ASSOCIATIVITY[token] == LEFT and
-                    PRECEDENCE[token] <= PRECEDENCE[stack[-1]]
+        if isinstance(token, GeneralOperator):
+            while len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
+                if (token.associativity == LEFT and
+                    token.precedence <= stack[-1].precedence
                     ):
                     output.append(stack.pop())
-                elif (ASSOCIATIVITY[token] == RIGHT and 
-                      PRECEDENCE[token] < PRECEDENCE[stack[-1]]
+                elif (token.associativity == RIGHT and 
+                      token.precedence < stack[-1].precedence
                       ):
                     output.append(stack.pop())
                 else:  
                     break
             stack.append(token)
-        elif token in LPARENS:
+        elif (isinstance(token, Constant) or
+              isinstance(token, numbers.Number) or 
+              isinstance(token, Var) or
+              isinstance(token, UserFunction)
+              ):
+            output.append(token)
+        elif token == '(':
             stack.append(token)
-        elif token in RPARENS:
-            while len(stack) > 0 and stack[-1] not in LPARENS:
+        elif token == ')':
+            while len(stack) > 0 and stack[-1] != '(':
                 output.append(stack.pop())
             
-            if len(stack) == 0 or stack[-1] not in LPARENS:
+            if len(stack) == 0 or stack[-1] != '(':
                 raise SyntaxError("Mismatched parentheses")
             
             if len(stack) > 0:
                 stack.pop()
-            if len(stack) > 0 and stack[-1] in PREFIX_FUNCTION_MAP.keys():
+            if len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
                 output.append(stack.pop())
                 
     while len(stack) > 0:
-        if stack[-1] in LPARENS + RPARENS:
+        if stack[-1] in ['(', ')']:
             raise SyntaxError("Mismatched parentheses")
         output.append(stack.pop())
             
     return output 
 
-def compute(function, operands):
-    '''
-    Apply the function to operands and return the result.
-    
-    Raises a SyntaxError for unknown functions, and for too few operands.
-    Raises other errors if the operand is an invalid input. These bubble up
-    from Python's implementations of the functions/operators, and include:
-        ValueError (ex: "(-4)!")
-        ZeroDivisionError (ex: "4/0")
-        TypeError (ex: "floor(1+j)")
-        (I need to find and list all possible error types here...)
-    '''
-
-    if function not in ALL_FUNCTIONS:
-        raise SyntaxError("Unkown function " + function)
-    
-    if function in PREFIX_FUNCTION_MAP.keys():
-        f = PREFIX_FUNCTION_MAP[function]
-        if NUM_OPERANDS[function] == 1:
-            return f(operands[0])
-        elif NUM_OPERANDS[function] == 2:
-            return f(operands[0], operands[1])
-    
-    if function == '+':
-        return sum(operands)
-    if function == '-':
-        return operands[0] - operands[1]
-    if function in ['*', IMPLICIT_MULT]:
-        prod = 1
-        for val in operands:
-            prod *= val
-        return prod
-        # return reduce(lambda a, b: a * b, operands)
-    if function == '/':
-        return float(operands[0]) / operands[1]
-    if function == '%':
-        return operands[0] % operands[1]
-    if function == '^':
-        return operands[0] ** operands[1]
-    if function == '!':
-        return math.factorial(operands[0])
- 
 class node(object):
     
     def __init__(self, v = None):
@@ -156,9 +145,7 @@ class node(object):
             self.children = [node(i) for i in v.children]
         # ordinary constructor
         else:
-            self.value = get_number(v)
-            if self.value == None:
-                self.value = v
+            self.value = v
             self.children = []
 
     def __repr__(self):
@@ -189,71 +176,7 @@ class node(object):
             for line in str(child).split("\n"):
                 result += "  " + line + "\n"
         return result[:-1]
-    
-    def normalize(self):
-        '''
-        Attempt to produce a canonical form.
-        '''
         
-        
-        if len(self.children) == 0:
-            return
-        
-        if self.value == '-':
-            assert len(self.children) == 2
-            self.value = '+'
-            tmp = node(NEG_OP)
-            tmp.children.append(self.children[1])
-            self.children[1] = tmp
-            self.children.sort()
-        elif self.value == '*':
-            assert len(self.children) == 2
-            
-            other, child = self.children
-            other.normalize()
-            child.normalize()
-            
-            if len(self.children[0].children) > len(self.children[1].children):
-                other, child = child, other
-                
-            new_children = []
-            for c in child.children:
-                tmp = node('*')
-                tmp.children.append(other)
-                tmp.children.append(c)
-                tmp.children.sort()
-                new_children.append(tmp)
-                
-            if len(new_children) > 0:
-                self.value = '+'
-                self.children = new_children
-
-        for child in self.children:
-            child.normalize()
-        
-        i = 0
-        while i < len(self.children):
-        # for i in xrange(len(self.children)):
-            
-            child = self.children[i]
-            # convert `(...) to -1 * (...)
-            if child.value == NEG_OP:
-                new_node = node('*')
-                new_node.children.append(node(-1))
-                new_node.children.append(child.children[0])
-                self.children[i] = new_node
-            
-            elif child.value == '+':
-                if self.value == '+':
-                    for c in child.children:
-                        self.children.append(c)
-                    self.children.pop(i)
-                    self.children.sort()
-                
-            i += 1
-        
-        self.children.sort()
-                        
     def reduce(self, replace_constants = False):
         ''' 
         Computes the value of this tree.
@@ -267,38 +190,15 @@ class node(object):
             child.reduce(replace_constants)
             operands.append(child)
 
-        if replace_constants and self.value in CONSTANTS.keys():
-            self.value = CONSTANTS[self.value]
+        if replace_constants and isinstance(self.value, Constant):
+            self.value = self.value.value
          
-        if self.value != '=' and self.value in ALL_FUNCTIONS:
-            if operands and all(get_number(x.value) != None for x in operands):    
-                self.value = compute(self.value, [x.value for x in operands])
+        if self.value != '=' and isinstance(self.value, GeneralOperator):
+            if operands and all(isinstance(x.value, numbers.Number) for x in operands):   
+                self.value = self.value.apply(*[x.value for x in operands])
                 for c in operands:
                     self.children.remove(c)
 
-    def __cmp__(self, other):
-        '''
-        This does a comparison based upon the string represntation
-        of the trees and is needed for sorting operands to approach
-        a canonical form.
-        '''
-        if other == None:
-            return 1
-        if str(self.value) == str(other.value):
-            if self.value == '*':
-                mine = "".join(map(str, self.children))
-                his = "".join(map(str, other.children))
-                if mine > his:
-                    return 1
-                elif mine < his:
-                    return -1
-                else:
-                    return 0
-            return 0
-        if str(self.value) > str(other.value):
-            return 1
-        return -1
-           
 def to_tree(rpn_expr):
     ''' 
     Parse rpn_expr to a tree where rpn_expr is some list of tokens
@@ -328,24 +228,26 @@ def to_tree(rpn_expr):
     while len(rpn_nodes) > 0:
         token = rpn_nodes.pop(0)
         
-        if get_number(token.value) != None:
-            stack.append(token)
-        elif str(token.value) in VARIABLES + list(CONSTANTS.keys()):
-            stack.append(token)
-        elif token.value in ALL_FUNCTIONS:
-  
-            if len(stack) < NUM_OPERANDS[token.value]:
+        if isinstance(token.value, GeneralOperator):
+            if len(stack) < token.value.num_operands:
                 raise SyntaxError("Not enough operands for " + repr(token.value))
             
-            if NUM_OPERANDS[token.value] == 1:    
+            if token.value.num_operands == 1:    
                 token.children.append(stack.pop())
-            elif NUM_OPERANDS[token.value] == 2:
+            elif token.value.num_operands == 2:
                 r, l = stack.pop(), stack.pop()
                 token.children.append(l)
                 token.children.append(r)
+            stack.append(token)
+        elif (isinstance(token.value, Constant) or
+              isinstance(token.value, numbers.Number) or
+              isinstance(token.value, Var) or
+              isinstance(token.value, UserFunction)
+              ):
             stack.append(token)
             
     if len(stack) != 1:
         raise SyntaxError("RPN-to-tree conversion failed.")
 
     return stack.pop()
+

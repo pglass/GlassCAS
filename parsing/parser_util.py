@@ -5,9 +5,10 @@ Used in rigid_parsing.py and liberal_parsing.py
 '''
 
 from parsing.parser_definitions import *
+import string
 
 def remove_whitespace(expr):
-    return "".join(e for e in expr if e not in WHITESPACE_CHARS)
+    return "".join(e for e in expr if e not in string.whitespace)
 
 def read_complex_number(expr, start):
     '''
@@ -58,7 +59,25 @@ def read_real_number(expr, start):
         raise SyntaxError("Dangling decimal point: " + 
             expr[max(0, start - 2) : min(len(expr), start + 2)])
     return token
-        
+
+def read_function(expr, start):
+    
+    token = expr[start]
+    
+    i = start + 1
+    if i < len(expr) and expr[i] == '[':
+        while i < len(expr) and expr[i] != ']':
+            token += expr[i]
+            i += 1
+        if i < len(expr) and expr[i] == ']':
+            token += expr[i]
+            return token
+        else:
+            raise SyntaxError("Unclosed function arguments: " +
+                expr[max(0, start - 2) : min(len(expr), start + 2)])
+    
+    return None
+    
 def get_number(value):
     ''' 
     Return a complex, float, or int if value is or represents an
@@ -70,17 +89,17 @@ def get_number(value):
     
     try:
         return int(value)
-    except ValueError:
+    except:
         pass
     
     try:
         return float(value)
-    except ValueError:
+    except:
         pass
         
     try:
         return complex(value)
-    except ValueError:
+    except:
         pass
         
     return None
@@ -105,3 +124,26 @@ def get_from_list(expr, start, value_list):
             
     return None
 
+def get_user_function(expr):
+    if not expr:
+        return None
+    name = expr[0]
+    operands = []
+    
+    if name not in string.ascii_letters:
+        return None
+    if expr[1] != '[':
+        return None
+    
+    i = 2
+    while i < len(expr) and expr[i] != ']':
+        if expr[i] in string.ascii_letters:
+            operands.append(Var(expr[i]))
+            i += 1
+        elif expr[i] == ',':
+            i += 1
+        else:
+            return None
+        
+    return UserFunction(name, operands)
+            

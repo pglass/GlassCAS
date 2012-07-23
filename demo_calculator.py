@@ -1,3 +1,4 @@
+
 '''
 demo_calculator.py -- A simple calculator.
 
@@ -16,6 +17,9 @@ if __name__ == '__main__':
                         action="store_true")
     parser.add_argument("-v", "--verbose", 
                         help="verbose mode", 
+                        action="store_true")
+    parser.add_argument("-t", "--tracebacks", 
+                        help="turn on full tracebacks", 
                         action="store_true")
 
     ARGS = parser.parse_args()           
@@ -37,6 +41,8 @@ if __name__ == '__main__':
             if not ARGS.verbose:
                 print(reduced_tree)
         except (SyntaxError, ZeroDivisionError, ValueError, TypeError) as error:
+            if ARGS.tracebacks:
+                traceback.print_tb(error.__traceback__)
             print(error)
         finally:
             if ARGS.verbose:

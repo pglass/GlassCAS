@@ -28,6 +28,7 @@ class TokenizeTestCases(unittest.TestCase):
         self.reals_cases     = rp_cases.tokenize_reals_cases
         self.complex_cases   = rp_cases.tokenize_complex_cases
         self.combined_cases  = rp_cases.tokenize_combined_cases
+        self.user_func_cases = rp_cases.tokenize_user_functions_cases
         self.bad_input_cases = rp_cases.tokenize_bad_input_cases
         
     def test_constants(self):
@@ -51,6 +52,9 @@ class TokenizeTestCases(unittest.TestCase):
     def test_combined(self):
         run_through_cases(self, self.combined_cases, rigid_parsing.tokenize)
 
+    def test_user_functions(self):
+        run_through_cases(self, self.user_func_cases, rigid_parsing.tokenize)
+        
     def test_bad_inputs(self):
         for case in self.bad_input_cases:
             with self.assertRaises(SyntaxError):
@@ -68,6 +72,7 @@ class RPNConversionTestCases(unittest.TestCase):
         self.basic_cases      = rp_cases.rpn_basic_correctness_cases
         self.precedence_cases = rp_cases.rpn_precedence_cases
         self.parens_cases     = rp_cases.rpn_parens_cases
+        self.user_func_cases  = rp_cases.rpn_user_functions_cases
         self.bad_input_cases  = rp_cases.rpn_bad_input_cases
         
     def test_basic_correctness(self):
@@ -78,6 +83,10 @@ class RPNConversionTestCases(unittest.TestCase):
             
     def test_parens(self):
         run_through_cases(self, self.parens_cases, rigid_parsing.to_RPN)
+
+    def test_user_functions(self):
+        run_through_cases(self, self.user_func_cases, rigid_parsing.to_RPN)
+        
     def test_bad_inputs(self):
         for key in self.bad_input_cases:
             with self.assertRaises(SyntaxError):

@@ -4,7 +4,7 @@ inputs into a non-ambiguous form(s) that rigid_parsing can handle.
 '''   
 
 from parsing.parser_definitions import *
-from parsing.parser_util import get_number
+import numbers
 
 def insert_implicit_mult_ops(tokens):
     '''
@@ -39,21 +39,26 @@ def insert_implicit_mult_ops(tokens):
     i = 0
     while i < len(tokens) - 1:
         # check for things on the left of an implicit multiply
-        if (get_number(tokens[i]) != None or 
-            tokens[i] in RPARENS + VARIABLES + list(CONSTANTS.keys()) or
-            tokens[i] in POSTFIX_FUNCTION_MAP.keys()
+        if (isinstance(tokens[i], numbers.Number) or 
+            tokens[i] == ')' or
+            isinstance(tokens[i], Var) or
+            isinstance(tokens[i], Constant) or
+            isinstance(tokens[i], PostfixOp)
             ):
             
             token = tokens[i+1]
             
             # check for things on the right side
-            if (get_number(token) != None or
-                token in LPARENS + VARIABLES + list(CONSTANTS.keys()
-                )):
-                tokens.insert(i+1, IMPLICIT_MULT)
+            if (isinstance(token, numbers.Number) or
+                token == '(' or
+                isinstance(token, Var) or
+                isinstance(token, Constant)
+                ):
+                
+                tokens.insert(i+1, ImplicitMultOp())
                 i += 2
-            elif token in PREFIX_FUNCTION_MAP.keys():
-                tokens.insert(i+1, "*")
+            elif isinstance(token, PrefixOp):
+                tokens.insert(i+1, TimesOp())
                 i += 2
             else:
                 i += 1
@@ -66,7 +71,7 @@ def insert_implicit_mult_ops(tokens):
 
 def return_length_change(func):
     '''
-    Decorator for functions f(tokens, i) that returns the change in len(tokens)
+    Decorator intended for functions f(tokens, i) that returns the change in len(tokens)
     '''
     def new_function(tokens, i):
         len_before = len(tokens)
@@ -81,29 +86,29 @@ def transform_if_negation(tokens, i):
     symbol '-' that is really a negation, alter tokens *in place* to
     represent the negation unambiguosly.
     '''
-    if not 0 <= i < len(tokens) or tokens[i] != '-':
+    if not 0 <= i < len(tokens) or tokens[i] != SubOp():
         return
     
     # handle minus sign at the front
     if i == 0:
-        if tokens[i:i+2] == ['-', '-']:
+        if tokens[i:i+2] == [SubOp(), SubOp()]:
             tokens[i:i+2] = []
         else:
-            tokens[i] = NEG_OP
+            tokens[i] = NegationOp()
     # handle '+-' occurrences
-    elif tokens[i-1:i+1] == ["+", "-"]:
+    elif tokens[i-1:i+1] == [PlusOp(), SubOp()]:
         if i-1 == 0:
-            tokens[i-1:i+1] = [NEG_OP]
+            tokens[i-1:i+1] = [NegationOp()]
         else:
-            tokens[i-1:i+1] = ["-"]
+            tokens[i-1:i+1] = [SubOp()]
     # handle '--' occurrences
-    elif tokens[i-1:i+1] == ["-", "-"]:
-        tokens[i-1:i+1] = ["+"]
+    elif tokens[i-1:i+1] == [SubOp(), SubOp()]:
+        tokens[i-1:i+1] = [PlusOp()]
     # handle '<LHS> OP - <RHS>' occurrences
-    elif (tokens[i-1] in ["*", IMPLICIT_MULT, '/', '%'] + LPARENS or
-          tokens[i-1] in PREFIX_FUNCTION_MAP.keys()
+    elif (tokens[i-1] in [TimesOp(), ImplicitMultOp(), DivideOp(), ModulusOp(), '('] or
+          isinstance(tokens[i-1], PrefixOp)
           ):
-        tokens[i] = NEG_OP
+        tokens[i] = NegationOp()
 
 def apply_transformations(tokens):
     '''
