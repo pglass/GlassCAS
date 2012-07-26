@@ -37,7 +37,7 @@ class GeneralOperator(object):
         return str(self.name)
         
     def __repr__(self):
-        return repr(self.name)
+        return self.__class__.__name__ + '()'
         
     def __eq__(self, other):
         try:
@@ -130,6 +130,7 @@ class ExponentOp(InfixOp):
         super().__init__('^', precedence=4, associativity=RIGHT)
         
     def apply(self, *operands):
+        self.check_operands(*operands)
         result = operands[-1]
         for e in reversed(operands[:-1]):
             result = e ** result
@@ -161,9 +162,17 @@ class PostfixOp(GeneralOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+class PrecZeroPostfixOp(PostfixOp):
+    def __init__(self):
+        super().__init__(name='Post(0)', precedence=0, associativity=LEFT, num_operands=1)
+        
+class PrecThreePostfixOp(PostfixOp):
+    def __init__(self):
+        super().__init__(name='Post(3)', precedence=3, associativity=LEFT, num_operands=1)
+        
 class FactorialOp(PostfixOp):
     def __init__(self):
-        super().__init__('!', precedence=5, associativity=LEFT, num_operands=1)
+        super().__init__(name='!', precedence=5, associativity=LEFT, num_operands=1)
     
     def apply(self, *operands):
         self.check_operands(*operands)
@@ -176,6 +185,15 @@ class PrefixOp(GeneralOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+class PrecZeroPrefixOp(PrefixOp):
+    def __init__(self):
+        super().__init__("Prefix(0)", precedence=0, associativity=RIGHT, num_operands=1)
+
+class PrecFivePrefixOp(PrefixOp):
+    def __init__(self):
+        super().__init__("Prefix(5)", precedence=5, associativity=RIGHT, num_operands=1)
+
+        
 class NegationOp(PrefixOp):
     def __init__(self):
         super().__init__(NEG_OP, precedence=3, associativity=RIGHT, num_operands=1)
@@ -282,7 +300,7 @@ class Var(object):
     def __str__(self):
         return str(self.name)
     def __repr__(self):
-        return "Var(%s)" % str(self)
+        return self.__class__.__name__ + "(%s)" % str(self)
         
     def __eq__(self, other):
         try:
@@ -296,8 +314,6 @@ class Var(object):
 class Constant(Var):
     def __init__(self, name, value):
         super().__init__(name, value)
-    def __repr__(self):
-        return "Constant(%s)" % str(self)
     
 class E(Constant):
     def __init__(self):

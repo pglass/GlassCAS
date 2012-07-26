@@ -105,7 +105,8 @@ def transform_if_negation(tokens, i):
     elif tokens[i-1:i+1] == [SubOp(), SubOp()]:
         tokens[i-1:i+1] = [PlusOp()]
     # handle '<LHS> OP - <RHS>' occurrences
-    elif (tokens[i-1] in [TimesOp(), ImplicitMultOp(), DivideOp(), ModulusOp(), '('] or
+    elif (tokens[i-1] == '(' or
+          isinstance(tokens[i-1], InfixOp) or
           isinstance(tokens[i-1], PrefixOp)
           ):
         tokens[i] = NegationOp()

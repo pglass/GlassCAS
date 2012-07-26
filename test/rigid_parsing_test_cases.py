@@ -282,11 +282,113 @@ rpn_precedence_cases = [
         [SqrtOp(), Var('x'), ExponentOp(), Var('y')],
         [Var('x'), Var('y'), ExponentOp(), SqrtOp()]
     ),
+    (
+        [Var('x'), ExponentOp(), NegationOp(), Pi()],
+        [Var('x'), Pi(), NegationOp(), ExponentOp()]
+    ),
     
     # factorial is highest precedence
     (
+        [4, PlusOp(), 5, FactorialOp()],
+        [4, 5, FactorialOp(), PlusOp()]
+    ),
+    (
+        [4, ExponentOp(), 5, FactorialOp()],
+        [4, 5, FactorialOp(), ExponentOp()]
+    ),
+    (
         [TanOp(), Var('x'), FactorialOp()], 
         [Var('x'), FactorialOp(), TanOp()]
+    ),
+]
+
+rpn_prefix_cases = [
+    # check that order is correct
+    (
+        [CosOp(), SinOp(), TanOp(), 4],
+        [4, TanOp(), SinOp(), CosOp()]
+    ),
+    (
+        [PrecFivePrefixOp(), SinOp(), PrecZeroPrefixOp(), 4],
+        [4, PrecZeroPrefixOp(), SinOp(), PrecFivePrefixOp()]
+    ),
+    (
+        [PrecFivePrefixOp(), PrecZeroPrefixOp(), SinOp(), 4],
+        [4, SinOp(), PrecZeroPrefixOp(), PrecFivePrefixOp()]
+    ),
+    # make sure prefix and infix precedences are respected
+    (
+        [4, PlusOp(), CosOp(), 5],
+        [4, 5, CosOp(), PlusOp()]
+    ),
+    (
+        [4, ExponentOp(), CosOp(), 5],
+        [4, 5, CosOp(), ExponentOp()]
+    ),
+    (
+        [4, PlusOp(), PrecZeroPrefixOp(), 5],
+        [4, 5, PrecZeroPrefixOp(), PlusOp()]
+    ),
+    (
+        [4, PlusOp(), PrecFivePrefixOp(), 5],
+        [4, 5, PrecFivePrefixOp(), PlusOp()]
+    ),
+    (
+        [CosOp(), 4, PlusOp(), PrecFivePrefixOp(), 5],
+        [4, CosOp(), 5, PrecFivePrefixOp(), PlusOp()]
+    ),
+    (
+        [PrecZeroPrefixOp(), 4, PlusOp(), PrecFivePrefixOp(), 5],
+        [4, 5, PrecFivePrefixOp(), PlusOp(), PrecZeroPrefixOp()]
+    ),
+]
+
+rpn_postfix_cases = [
+    # check that order is correct
+    (
+        [4, PrecZeroPostfixOp(), PrecThreePostfixOp(), PrecZeroPostfixOp()],
+        [4, PrecZeroPostfixOp(), PrecThreePostfixOp(), PrecZeroPostfixOp()],
+    ),
+    (
+        [4, PrecZeroPostfixOp(), PrecThreePostfixOp(), FactorialOp()],
+        [4, PrecZeroPostfixOp(), PrecThreePostfixOp(), FactorialOp()],
+    ),
+    (
+        [4, PrecThreePostfixOp(), FactorialOp(), PrecZeroPostfixOp()],
+        [4, PrecThreePostfixOp(), FactorialOp(), PrecZeroPostfixOp()],
+    ),
+    # make sure postfix and infix precedences are respected
+    (
+        [4, PlusOp(), 5, PrecZeroPostfixOp()],
+        [4, 5, PlusOp(), PrecZeroPostfixOp()],
+    ),
+    (
+        [4, PlusOp(), 5, PrecThreePostfixOp()],
+        [4, 5, PrecThreePostfixOp(), PlusOp()],
+    ),
+    (
+        [4, PlusOp(), 5, PrecThreePostfixOp(), PrecZeroPostfixOp()],
+        [4, 5, PrecThreePostfixOp(), PlusOp(), PrecZeroPostfixOp()],
+    ),
+    (
+        [4, PlusOp(), 5, PrecZeroPostfixOp(), PrecThreePostfixOp()],
+        [4, 5, PlusOp(), PrecZeroPostfixOp(), PrecThreePostfixOp()],
+    ),
+    (
+        [4, PrecThreePostfixOp(), PlusOp(), 5, PrecZeroPostfixOp(), PrecThreePostfixOp()],
+        [4, PrecThreePostfixOp(), 5, PlusOp(), PrecZeroPostfixOp(), PrecThreePostfixOp()],
+    ),
+    (
+        [4, PlusOp(), 5, PrecZeroPostfixOp(), PlusOp(), 6, PrecThreePostfixOp()],
+        [4, 5, PlusOp(), PrecZeroPostfixOp(), 6, PrecThreePostfixOp(), PlusOp()]
+    ),
+    (
+        [4, PlusOp(), 5, PrecThreePostfixOp(), PlusOp(), 6, PrecZeroPostfixOp()],
+        [4, 5, PrecThreePostfixOp(), PlusOp(), 6, PlusOp(), PrecZeroPostfixOp()]
+    ),
+    (
+        [4, PlusOp(), 5, PrecThreePostfixOp(), PlusOp(), 6, PrecThreePostfixOp()],
+        [4, 5, PrecThreePostfixOp(), PlusOp(), 6, PrecThreePostfixOp(), PlusOp()]
     ),
 ]
 

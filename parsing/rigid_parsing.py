@@ -41,8 +41,7 @@ def tokenize(expr):
     while i < len(expr):
         token = None
         
-        # Attempt to read different types of tokens 
-        # and construct objects out of them.
+        # read a number
         if expr[i] in NUMBER_CHARS:
             token = read_complex_number(expr, i)
             i += len(token)
@@ -65,7 +64,7 @@ def tokenize(expr):
                 token = None
         # read a variable or function
         if token == None and expr[i] in string.ascii_letters:
-            # try to get a function 'f[x,y,...]'
+        
             token = read_function(expr, i)
             func_obj = get_user_function(token)
             if func_obj != None:
@@ -89,6 +88,9 @@ def to_RPN(tokens):
     Convert the tokenized infix expression tokens to a 
     postfix/RPN expression using Dijsktra's Shunting-yard algorithm.
     
+    This is adapted from http://en.wikipedia.org/wiki/Shunting-yard_algorithm
+    with modifcations to support postfix and prefix operators.
+    
     This will raise a SyntaxError for mismatched parentheses.
     '''
     
@@ -98,20 +100,26 @@ def to_RPN(tokens):
     for token in tokens:
         if isinstance(token, GeneralOperator):
             while len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
-                if (token.associativity == LEFT and
-                    token.precedence <= stack[-1].precedence
+                if (isinstance(token, InfixOp) and 
+                        (token.associativity == LEFT and 
+                        token.precedence <= stack[-1].precedence or 
+                        token.precedence < stack[-1].precedence
+                        )
                     ):
                     output.append(stack.pop())
-                elif (token.associativity == RIGHT and 
-                      token.precedence < stack[-1].precedence
-                      ):
+                elif isinstance(stack[-1], PostfixOp):
+                    output.append(stack.pop())
+                elif (isinstance(token, PostfixOp) and
+                    isinstance(stack[-1], InfixOp) and 
+                    token.precedence < stack[-1].precedence
+                    ):
                     output.append(stack.pop())
                 else:  
                     break
             stack.append(token)
-        elif (isinstance(token, Constant) or
+        elif (isinstance(token, Var) or
               isinstance(token, numbers.Number) or 
-              isinstance(token, Var) or
+              # isinstance(token, Var) or
               isinstance(token, UserFunction)
               ):
             output.append(token)

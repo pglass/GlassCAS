@@ -71,6 +71,8 @@ class RPNConversionTestCases(unittest.TestCase):
     def setUp(self):
         self.basic_cases      = rp_cases.rpn_basic_correctness_cases
         self.precedence_cases = rp_cases.rpn_precedence_cases
+        self.prefix_cases     = rp_cases.rpn_prefix_cases
+        self.postfix_cases    = rp_cases.rpn_postfix_cases
         self.parens_cases     = rp_cases.rpn_parens_cases
         self.user_func_cases  = rp_cases.rpn_user_functions_cases
         self.bad_input_cases  = rp_cases.rpn_bad_input_cases
@@ -80,7 +82,13 @@ class RPNConversionTestCases(unittest.TestCase):
         
     def test_precedences(self):
         run_through_cases(self, self.precedence_cases, rigid_parsing.to_RPN)
-            
+
+    def test_prefix_support(self):
+        run_through_cases(self, self.prefix_cases, rigid_parsing.to_RPN)
+        
+    def test_postfix_support(self):
+        run_through_cases(self, self.postfix_cases, rigid_parsing.to_RPN)
+    
     def test_parens(self):
         run_through_cases(self, self.parens_cases, rigid_parsing.to_RPN)
 
