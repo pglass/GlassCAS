@@ -1,4 +1,3 @@
-
 '''
 demo_calculator.py -- A simple calculator.
 
@@ -6,38 +5,44 @@ See parser_definitions.py for supported functions, operators, and constants.
 '''
 
 import sys, argparse, traceback
-import parsing.rigid_parsing as rigid_parsing
-import parsing.liberal_parsing as liberal_parsing
+import parsing.parsing
             
 if __name__ == '__main__':            
-    parser = argparse.ArgumentParser()
+    arg_parser = argparse.ArgumentParser()
 
-    parser.add_argument("-r", "--replace_constants", 
+    arg_parser.add_argument("-r", "--replace_constants", 
                         help="replace constants with approximate values",
                         action="store_true")
-    parser.add_argument("-v", "--verbose", 
+    arg_parser.add_argument("-v", "--verbose", 
                         help="verbose mode", 
                         action="store_true")
-    parser.add_argument("-t", "--tracebacks", 
+    arg_parser.add_argument("-t", "--tracebacks", 
                         help="turn on full tracebacks", 
                         action="store_true")
+    arg_parser.add_argument("-d", "--dump_table",
+                        help="print out the symbol table with each command",
+                        action="store_true")
 
-    ARGS = parser.parse_args()           
+    ARGS = arg_parser.parse_args()
+    parser = parsing.parsing.Parser()
     while True:
         uin = input('>>')
-        if len(uin) > 1 and uin in 'xxxxxxxx':
+        if len(uin) > 1 and uin in 'xxxxxx':
             break
         
         tokens, fixed_input, rpn, = None, None, None,
         tree, reduced_tree = None, None
         try:
-            tokens = rigid_parsing.tokenize(uin)
-            fixed_input = liberal_parsing.apply_transformations(list(tokens))
-            rpn = rigid_parsing.to_RPN(fixed_input)
-            tree = rigid_parsing.to_tree(rpn)
+            tokens = parser.tokenize(uin)
+            fixed_input = parsing.parsing.apply_transformations(list(tokens))
+            rpn = parser.to_rpn(fixed_input)
+            tree = parser.to_tree(rpn)
 
-            reduced_tree = rigid_parsing.node(tree)
+            reduced_tree = parsing.parsing.node(tree)
             reduced_tree.reduce(ARGS.replace_constants)
+            
+            parser.update_symbol_table(reduced_tree)
+            
             if not ARGS.verbose:
                 print(reduced_tree)
         except (SyntaxError, ZeroDivisionError, ValueError, TypeError) as error:
@@ -46,11 +51,20 @@ if __name__ == '__main__':
             print(error)
         finally:
             if ARGS.verbose:
-                print("Tokens:", tokens)
-                print("Fixed input:", fixed_input)
-                print("RPN:", rpn)
-                print("Tree:")
-                print(tree)
-                print("Reduce:")
-                print(reduced_tree)
+                if tokens != None:
+                    print("Tokens:", list(map(str, tokens)))
+                if fixed_input != None:
+                    print("Fixed input:", list(map(str, fixed_input)))
+                if rpn != None:
+                    print("RPN:", rpn)
+                if tree != None:
+                    print("Tree:")
+                    print(tree)
+                if reduced_tree != None:
+                    print("Reduce:")
+                    print(reduced_tree)
+            if ARGS.dump_table:
+                print("Defined Symbols:")
+                for k, v in parser.symbol_table.items():
+                    print("  ", k, ":", repr(v))
                 

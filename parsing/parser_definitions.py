@@ -10,6 +10,7 @@ This also contains dictionaries that map string tokens to classes:
 '''
 
 import cmath, math
+import parsing.parsing
 
 REAL_NUMBER_CHARS = list('0123456789.')
 NUMBER_CHARS = REAL_NUMBER_CHARS + ['j'] # Use 'j' as sqrt(-1)
@@ -19,6 +20,9 @@ IMPLICIT_MULT = '@'
 
 # negation operator (different than subtraction)
 NEG_OP = '`'
+
+# argument separator
+ARG_DELIM = ','
 
 # Left and right associativity constants
 LEFT  = -1
@@ -192,7 +196,6 @@ class PrecZeroPrefixOp(PrefixOp):
 class PrecFivePrefixOp(PrefixOp):
     def __init__(self):
         super().__init__("Prefix(5)", precedence=5, associativity=RIGHT, num_operands=1)
-
         
 class NegationOp(PrefixOp):
     def __init__(self):
@@ -253,41 +256,52 @@ class LogTenOp(PrefixOp):
 ########################################
 # USER-DEFINED FUNCTION/OPERATOR
 ########################################
-class UserFunction(object):
+class UserFunction(PrefixOp):
     ''' Represent f[v1, v2, ..., vn] = <expression> '''
-    def __init__(self, name, operand_list, expression=None):
-        self.name = name
-        self.precedence = 3
-        self.associativity = RIGHT
-        self.num_operands = len(operand_list)
+    def __init__(self, name, operand_list=[], value=None):
+        super().__init__(
+            name=name, 
+            precedence=3,
+            associativity=RIGHT, 
+            num_operands=len(operand_list)
+        )
+
         self.operand_list = operand_list
-        self.expression = expression
+        self.value = value
     
     def __str__(self):
         result = str(self.name)
         result += '['
         for e in self.operand_list[:-1]:
             result += str(e) + ','
-        result += str(self.operand_list[-1])
+        
+        try:
+            result += str(self.operand_list[-1])
+        except IndexError:
+            pass
         result += ']'
-            
-        if self.expression:
-            result += " = %s" % self.expression
+        
         return result
     
     def __repr__(self):
-        return str(self)
+        return "UserFunction(%s = %r)" % (self, self.value)
         
     def __eq__(self, other):
         return str(self) == str(other)
     
-    def check_operands(*operands):
+    def check_operands(self, *operands):
         if len(self.operand_list) < len(operands):
             raise SyntaxError("Too few operands for %s" % self.name)
     
     def apply(self, *operands):
-        self.check_operands(*operands)
-        print("apply %s%s" % (self.name, operands))
+        # print("applying %s%s" % (self.name, operands))
+        if self.value != None:
+            self.check_operands(*operands)
+            result = parsing.parsing.node(self.value)
+            for arg, val in zip(self.operand_list, operands):
+                result.replace(arg, val)
+            result.reduce()
+            return result
         
 ########################################
 # VARIABLES/CONSTANTS
@@ -300,7 +314,7 @@ class Var(object):
     def __str__(self):
         return str(self.name)
     def __repr__(self):
-        return self.__class__.__name__ + "(%s)" % str(self)
+        return "%s(%s = %r)" % (self.__class__.__name__, self.name, self.value)
         
     def __eq__(self, other):
         try:
@@ -314,6 +328,9 @@ class Var(object):
 class Constant(Var):
     def __init__(self, name, value):
         super().__init__(name, value)
+    
+    def __repr__(self):
+        return "%s(%s = %s)" % (self.__class__.__name__, self.name, self.value)
     
 class E(Constant):
     def __init__(self):

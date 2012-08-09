@@ -2,16 +2,14 @@
 run_tests.py
 '''
 
-from test.rigid_parsing_test import (
+from test.parsing_test import (
     TokenizeTestCases,
     RPNConversionTestCases,
-    TreeTestCases
-)
-
-from test.liberal_parsing_test import (
+    TreeTestCases,
     InsertImplicitMultOpsTestCases,
     TransformIfNegationTestCases,
     ApplyTransformationsTestCases
+    
 )
 
 if __name__ == '__main__':
