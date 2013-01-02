@@ -7,7 +7,6 @@ import parsing.parsing
 import test.parsing_test_cases as pt_cases
 import test.test_util
 
-
 class TokenizeTestCases(unittest.TestCase):
     '''
     - Test that all possible tokens are recognized properly:
@@ -17,7 +16,7 @@ class TokenizeTestCases(unittest.TestCase):
         Parens
         Integers/Reals
         Complex numbers
-    - Test that SyntaxErrors are raise for bad inputs.
+    - Test that SyntaxErrors are raised for bad inputs.
     '''
     
     def setUp(self):
@@ -144,24 +143,24 @@ class TreeTestCases(unittest.TestCase):
     def test_reduce_predefined_ops(self):
         def get_test_result(case):
             tree = parsing.parsing.Parser().to_tree(case)
-            tree.reduce()
-            return repr(tree)
-            
+            result = tree.reduce()
+            return repr(result)
+
         test.test_util.run_through_cases(self, self.reduce_cases, get_test_result)
     
     def test_reduce_user_funcs(self):
         def get_test_result(case):
             tree = parsing.parsing.Parser().to_tree(case)
-            tree.reduce()
-            return repr(tree)
+            result = tree.reduce()
+            return repr(result)
             
         test.test_util.run_through_cases(self, self.user_funcs_cases, get_test_result)
         
     def test_constant_replacement(self):
         def get_test_result(case):
             tree = parsing.parsing.Parser().to_tree(case)
-            tree.reduce(replace_constants = True)
-            return repr(tree)
+            result = tree.reduce(replace_constants = True)
+            return repr(result)
         
         test.test_util.run_through_cases(self, self.sub_constants_cases, get_test_result)
     

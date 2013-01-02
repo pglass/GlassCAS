@@ -1,9 +1,3 @@
-'''
-parser_util.py
-
-Used in rigid_parsing.py and liberal_parsing.py
-'''
-
 from parsing.parser_definitions import *
 import string
 

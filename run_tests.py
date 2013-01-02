@@ -9,7 +9,10 @@ from test.parsing_test import (
     InsertImplicitMultOpsTestCases,
     TransformIfNegationTestCases,
     ApplyTransformationsTestCases
-    
+)
+
+from test.recognition_test import (
+  RecognitionTestCases
 )
 
 if __name__ == '__main__':

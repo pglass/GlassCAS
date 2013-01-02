@@ -6,6 +6,8 @@ See parser_definitions.py for supported functions, operators, and constants.
 
 import sys, argparse, traceback
 import parsing.parsing
+import parsing.visitors
+import parsing.recognition 
             
 if __name__ == '__main__':            
     arg_parser = argparse.ArgumentParser()
@@ -23,13 +25,18 @@ if __name__ == '__main__':
                         help="print out the symbol table with each command",
                         action="store_true")
 
+    arg_parser.add_argument("--types",
+                        help="show expression types",
+                        action="store_true")
+
     ARGS = arg_parser.parse_args()
     parser = parsing.parsing.Parser()
     while True:
-        uin = input('>>')
+        uin = input('>> ')
         if len(uin) > 1 and uin in 'xxxxxx':
             break
         
+        # break apart each step of parsing/evaluation for debug purposes
         tokens, fixed_input, rpn, = None, None, None,
         tree, reduced_tree = None, None
         try:
@@ -38,9 +45,14 @@ if __name__ == '__main__':
             rpn = parser.to_rpn(fixed_input)
             tree = parser.to_tree(rpn)
 
-            reduced_tree = parsing.parsing.node(tree)
-            reduced_tree.reduce(ARGS.replace_constants)
+            if ARGS.types:
+              print("Expression has type: ", tree.accept(parsing.recognition.Recognizer()))
+
+            reduced_tree = tree.reduce(ARGS.replace_constants)
             
+            if ARGS.types:
+              print("Reduced expression has type:", tree.accept(parsing.recognition.Recognizer()))
+
             parser.update_symbol_table(reduced_tree)
             
             if not ARGS.verbose:

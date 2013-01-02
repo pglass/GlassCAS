@@ -1,11 +1,11 @@
 '''
 parsing.py
 
-This defines a Parser class, as well as unbound methods for supporting a more 
-liberal syntax, like using "-" for both negation and subtraction.
-
+This defines a Parser class, as well as unbound methods for optionally
+supporting other syntax, like implicit multiplication 
 '''
 
+from parsing.node import node
 from parsing.parser_definitions import *
 from parsing.parser_util import *
 import numbers
@@ -15,6 +15,19 @@ class Parser(object):
     def __init__(self):
         self.symbol_table = {}
         
+    def parse(self, input_string, update_symbol_table = False):
+      '''
+      This parses input_string and returns the syntax tree.
+
+      By default, this does not update this Parser's symbol_table.
+      '''
+      tokens = apply_transformations(self.tokenize(input_string))
+      rpn = self.to_rpn(tokens)
+      tree = self.to_tree(rpn)
+      if update_symbol_table:
+        self.update_symbol_table(tree)
+      return tree
+
     def tokenize(self, expr):
         '''
         Split expr into a list of tokens.
@@ -111,8 +124,8 @@ class Parser(object):
             elif isinstance(token, GeneralOperator):
                 while len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
                     if (isinstance(token, InfixOp) and 
-                            (token.associativity == LEFT and 
-                             token.precedence <= stack[-1].precedence or 
+                            ((token.associativity == LEFT and 
+                             token.precedence <= stack[-1].precedence) or 
                              token.precedence < stack[-1].precedence
                             )
                         ):
@@ -140,7 +153,7 @@ class Parser(object):
                 
                 if len(stack) > 0:
                     stack.pop()
-                if len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
+                if len(stack) > 0 and isinstance(stack[-1], PrefixOp):
                     output.append(stack.pop())
                     
         while len(stack) > 0:
@@ -202,7 +215,7 @@ class Parser(object):
             
         if len(stack) != 1:
             # could use more sophisticated feedback here
-            raise SyntaxError("RPN-to-tree conversion failed.")
+            raise SyntaxError("RPN-to-tree conversion failed: %s" % stack)
 
         return stack.pop()
     
@@ -218,98 +231,6 @@ class Parser(object):
                 else:
                     raise SyntaxError("Cannot assign to literal %s" % left.value)
 
-class node(object):
-    
-    def __init__(self, v = None):
-        # copy constructor
-        if isinstance(v, node):
-            self.value = v.value
-            self.children = [node(i) for i in v.children]
-        # ordinary constructor
-        else:
-            self.value = v
-            self.children = []
-
-    def __repr__(self):
-        '''
-        Return a string representation of this tree in RPN.
-        
-        This is used for testing.
-        '''
-        
-        result = ''
-        
-        for child in self.children:
-            result += repr(child) + " "
-                    
-        return result + str(self.value)
-          
-    def __str__(self):
-        '''
-        Produce a string representation of this tree's structure.
-        '''
-        
-        result = ''
-                
-        result += str(self.value)
-        result += "\n"
-        
-        for child in reversed(self.children):
-            for line in str(child).split("\n"):
-                result += "  " + line + "\n"
-        return result[:-1]
-        
-    def reduce(self, replace_constants = False):
-        ''' 
-        Computes the value of this tree.
-        
-        replace_constants = True will replace constant identifiers 
-            with their numeric values, e.g., 'e' becomes 2.7182818...
-        replace_constants = False will leave 'e' in the tree.
-        '''
-        
-        operands = []
-        for child in self.children:
-            child.reduce(replace_constants)
-            operands.append(child)
-
-        if replace_constants and isinstance(self.value, Constant):
-            self.value = self.value.value
-        
-        # if isinstance(self.value, UserFunction):
-            # tmp = self.value.apply(*[x.value for x in operands])
-            # if tmp != None:
-                # self.value = self.value.apply(*[x.value for x in operands])
-                # for c in operands:
-                    # self.children.remove(c)
-                        
-        if self.value not in ['=', ':='] and isinstance(self.value, GeneralOperator):
-            if isinstance(self.value, UserFunction) or all(isinstance(x.value, numbers.Number) for x in operands):
-                
-                tmp = self.value.apply(*[x.value for x in operands])
-                if tmp != None:
-                    self.value = self.value.apply(*[x.value for x in operands])
-                    for c in operands:
-                        self.children.remove(c)
-    
-    def replace(self, symbol, expr):
-        '''
-        symbol is an identifier.
-        expr is a node object.
-        
-        Return True if this node needs to be replaced.
-        '''
-        
-        if str(self.value) == str(symbol):
-            if isinstance(expr, node):
-                self.value = expr.value
-                self.children = expr.children
-            else:
-                self.value = expr
-        else:
-            for i, child in enumerate(self.children):
-                child.replace(symbol, expr)
-        
 def insert_implicit_mult_ops(tokens):
     '''
     This inserts IMPLICIT_MULT and '*' symbols to support implicit

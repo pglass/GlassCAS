@@ -1,20 +1,20 @@
 '''
-Test cases for methods in rigid_parsing
+Test cases for methods in parsing
 
 -- Note: Symbol objects compare using their string representation.
          That is, "'cos' == CosOp()" and "PlusOp() in ['+']" should
          both give true. So the *outputs* of tests can use either
          strings ['+', 'cos'] or operator objects [PlusOp(), CosOp()]
          for checking equality (if that is sufficient for the test case).
-         However, you still have to be particular about the inputs.
+         However, you still have to be particular about the input types.
 '''
 
 from parsing.parser_definitions import *
-from parsing.parsing import node
+from parsing.node import node
 import string
 
 #
-# rigid_parsing.tokenize test cases
+# Parser.tokenize test cases
 #
 tokenize_constants_cases = [
     ("e"     , ["e"]                 ),
@@ -151,7 +151,7 @@ tokenize_bad_input_cases = [
 ]
 
 #
-# rigid_parsing.to_RPN test cases
+# Parser.to_rpn test cases
 #
 rpn_basic_correctness_cases = [
     (list(map(Var, string.ascii_letters)), list(map(Var, string.ascii_letters))),
@@ -422,6 +422,10 @@ rpn_parens_cases = [
         [SqrtOp(), '(', Var('x'), ')', ExponentOp(), Var('y')], 
         [Var('x'), SqrtOp(), Var('y'), ExponentOp()]
     ),
+    (
+        [1, EqualsOp(), '(', 2, ')', TimesOp(), '(', 3, ')'],
+        [1, 2, 3, TimesOp(), EqualsOp()]
+    ),
 ]
 
 rpn_user_functions_cases = [
@@ -453,9 +457,9 @@ rpn_bad_input_cases = [
 ]
 
 #
-# rigid_parsing.to_tree test cases
+# Parser.to_tree test cases
 #
-# These go in as tokens in RPN. The tree structure is checked using `node`.
+# These go in as tokens in RPN. The result is checked using repr(node).
 #
 tree_operand_order_cases = [
     ([1]                           , '1'       ),
@@ -482,7 +486,7 @@ tree_bad_input_cases = [
 ]
 
 #
-# rigid_parsing.node.reduce test cases
+# node.reduce test cases
 #
 tree_reduce_cases = [
     ([1]       , '1'  ),
