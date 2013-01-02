@@ -4,6 +4,13 @@ import numbers
 class node(object):
 
     def __init__(self, v = None):
+        '''
+        If v is a node, then this copies the tree rooted at v.
+        Otherwise this constructs a new node value v and no children.
+
+        By default, n.expr_type is None. To assign the types for n and all
+            children you must explicitly call n.assign_types().
+        '''
         # copy constructor
         if isinstance(v, node):
             self.value = v.value
@@ -13,8 +20,13 @@ class node(object):
             self.value = v
             self.children = []
 
+        self.expr_type = None
+
     def accept(self, visitor):
         return visitor.visit(self)
+
+    def assign_types(self):
+        self.accept(parsing.recognizition.Recognizer(assign_types = True))
 
     def __repr__(self):
         '''
