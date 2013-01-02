@@ -27,7 +27,7 @@ tokenize_constants_cases = [
 tokenize_functions_cases = [
     ("".join(map(str, OP_CLASS_DICT.keys())) , list(OP_CLASS_DICT.keys())),
     (" ".join(map(str, OP_CLASS_DICT.keys())), list(OP_CLASS_DICT.keys())),
-    
+
     ("cos"         , ["cos"]                     ),
     ("cossin"      , ["cos", "sin"]              ),
     ("cossincossin", ["cos", "sin", "cos", "sin"]),
@@ -98,13 +98,13 @@ tokenize_combined_cases = [
     ("x*sin(x)"            , ["x", "*", "sin", "(", "x", ")"]           ),
     ("c*cos(s)"            , ["c", "*", "cos", "(", "s", ")"]           ),
     ("pi * e / cos(e)"     , ["pi", "*", "e", "/", "cos", "(", "e", ")"]),
-    
+
     (
-        "(234+567)*(123+456)", 
+        "(234+567)*(123+456)",
         ["(", 234, "+", 567, ")", "*", "(", 123, "+", 456, ")"]
     ),
     (
-        "coscos(1.1+3)*cos(5)", 
+        "coscos(1.1+3)*cos(5)",
         ["cos", "cos", "(", 1.1, "+", 3, ")", "*", "cos", "(", 5, ")"]
     ),
 ]
@@ -123,12 +123,12 @@ tokenize_arg_delimiter_cases = [
     (ARG_DELIM    , [ARG_DELIM]),
     (ARG_DELIM * 4, [ARG_DELIM, ARG_DELIM, ARG_DELIM, ARG_DELIM]),
     (
-        '3{0}x{0}5.5{0}'.format(ARG_DELIM), 
-        [3, ARG_DELIM, Var('x'), ARG_DELIM, 5.5, ARG_DELIM]),    
+        '3{0}x{0}5.5{0}'.format(ARG_DELIM),
+        [3, ARG_DELIM, Var('x'), ARG_DELIM, 5.5, ARG_DELIM]),
     (
-        '3{0}xy{0}f[a{0}b]'.format(ARG_DELIM), 
+        '3{0}xy{0}f[a{0}b]'.format(ARG_DELIM),
         [3, ARG_DELIM, Var('x'), Var('y'), ARG_DELIM, UserFunction('f', [Var('a'), Var('b')])]
-    ),  
+    ),
 ]
 
 tokenize_bad_input_cases = [
@@ -155,7 +155,7 @@ tokenize_bad_input_cases = [
 #
 rpn_basic_correctness_cases = [
     (list(map(Var, string.ascii_letters)), list(map(Var, string.ascii_letters))),
-    
+
     ([1,2,3,4,5,6,7,8,9,0], [1,2,3,4,5,6,7,8,9,0]),
     ([3j, EqualsOp(), 4]  , [3j, 4, EqualsOp()]  ),
     ([3j, PlusOp(), 4]    , [3j, 4, PlusOp()]    ),
@@ -164,7 +164,7 @@ rpn_basic_correctness_cases = [
     ([3j, DivideOp(), 4]  , [3j, 4, DivideOp()]  ),
     ([3j, ModulusOp(), 4] , [3j, 4, ModulusOp()] ),
     ([3j, ExponentOp(), 4], [3j, 4, ExponentOp()]),
-    
+
     (
         [Var('x'), EqualsOp(), Var('y'), EqualsOp(), Var('z')],
         [Var('x'), Var('y'), EqualsOp(), Var('z'), EqualsOp()]
@@ -182,7 +182,7 @@ rpn_basic_correctness_cases = [
         [Var('x'), Var('y'), TimesOp(), Var('z'), TimesOp()]
     ),
     (
-        [Var('x'), DivideOp(), Var('y'), DivideOp(), Var('z')], 
+        [Var('x'), DivideOp(), Var('y'), DivideOp(), Var('z')],
         [Var('x'), Var('y'), DivideOp(), Var('z'), DivideOp()]
     ),
     (
@@ -190,27 +190,27 @@ rpn_basic_correctness_cases = [
         [Var('x'), Var('y'), ModulusOp(), Var('z'), ModulusOp()]
     ),
     (
-        [Var('x'), ExponentOp(), Var('y'), ExponentOp(), Var('z')], 
+        [Var('x'), ExponentOp(), Var('y'), ExponentOp(), Var('z')],
         [Var('x'), Var('y'), Var('z'), ExponentOp(), ExponentOp()]
     ),
-    
+
     ([CosOp(), 3]                  , [3, CosOp()]                  ),
     ([3, FactorialOp()]            , [3, FactorialOp()]            ),
     ([CosOp(), CosOp(), CosOp(), 3], [3, CosOp(), CosOp(), CosOp()]),
     (
-        [3, FactorialOp(), FactorialOp(), FactorialOp()], 
+        [3, FactorialOp(), FactorialOp(), FactorialOp()],
         [3, FactorialOp(), FactorialOp(), FactorialOp()]
     ),
 ]
-    
+
 rpn_precedence_cases = [
     # equals sign is lowest precedence
     (
-        [Var('x'), PlusOp(), 5, EqualsOp(), Var('y'), SubOp(), 3], 
+        [Var('x'), PlusOp(), 5, EqualsOp(), Var('y'), SubOp(), 3],
         [Var('x'), 5, PlusOp(), Var('y'), 3, SubOp(), EqualsOp()]
     ),
     (
-        [Var('x'), TimesOp(), 5, EqualsOp(), Var('y'), ExponentOp(), 3, FactorialOp()], 
+        [Var('x'), TimesOp(), 5, EqualsOp(), Var('y'), ExponentOp(), 3, FactorialOp()],
         [Var('x'), 5, TimesOp(), Var('y'), 3, FactorialOp(), ExponentOp(), EqualsOp()]
     ),
 
@@ -224,11 +224,11 @@ rpn_precedence_cases = [
         [Var('w'), Var('x'), Var('y'), DivideOp(), PlusOp()]
     ),
     (
-        [Var('w'), PlusOp(), Var('x'), ModulusOp(), Var('y')], 
+        [Var('w'), PlusOp(), Var('x'), ModulusOp(), Var('y')],
         [Var('w'), Var('x'), Var('y'), ModulusOp(), PlusOp()]
     ),
     (
-        [Var('w'), PlusOp(), Var('x'), TimesOp(), Var('y'), PlusOp(), Var('z')], 
+        [Var('w'), PlusOp(), Var('x'), TimesOp(), Var('y'), PlusOp(), Var('z')],
         [Var('w'), Var('x'), Var('y'), TimesOp(), PlusOp(), Var('z'), PlusOp()]
     ),
     (
@@ -236,59 +236,59 @@ rpn_precedence_cases = [
         [Var('w'), Var('x'), Var('y'), DivideOp(), PlusOp(), Var('z'), PlusOp()]
     ),
     (
-        [Var('w'), PlusOp(), Var('x'), ModulusOp(), Var('y'), PlusOp(), Var('z')], 
+        [Var('w'), PlusOp(), Var('x'), ModulusOp(), Var('y'), PlusOp(), Var('z')],
         [Var('w'), Var('x'), Var('y'), ModulusOp(), PlusOp(), Var('z'), PlusOp()]
     ),
-    
+
     # functions are higher than +-*/%
     (
         [CosOp(), Var('x'), EqualsOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), EqualsOp()]
     ),
     (
-        [CosOp(), Var('x'), PlusOp(), Var('y')], 
+        [CosOp(), Var('x'), PlusOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), PlusOp()]
     ),
     (
-        [CosOp(), Var('x'), SubOp(), Var('y')], 
+        [CosOp(), Var('x'), SubOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SubOp()]
     ),
     (
-        [CosOp(), Var('x'), TimesOp(), Var('y')], 
+        [CosOp(), Var('x'), TimesOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), TimesOp()]
     ),
     (
-        [CosOp(), Var('x'), DivideOp(), Var('y')], 
+        [CosOp(), Var('x'), DivideOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), DivideOp()]
     ),
     (
-        [CosOp(), Var('x'), ModulusOp(), Var('y')], 
+        [CosOp(), Var('x'), ModulusOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), ModulusOp()]
     ),
     (
-        [CosOp(), Var('x'), EqualsOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), EqualsOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), EqualsOp()]),
     (
-        [CosOp(), Var('x'), PlusOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), PlusOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), PlusOp()]
     ),
     (
-        [CosOp(), Var('x'), SubOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), SubOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), SubOp()]
     ),
     (
-        [CosOp(), Var('x'), TimesOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), TimesOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), TimesOp()]
     ),
     (
-        [CosOp(), Var('x'), DivideOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), DivideOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), DivideOp()]
     ),
     (
-        [CosOp(), Var('x'), ModulusOp(), SinOp(), Var('y')], 
+        [CosOp(), Var('x'), ModulusOp(), SinOp(), Var('y')],
         [Var('x'), CosOp(), Var('y'), SinOp(), ModulusOp()]
     ),
-    
+
     # exponentiation is higher than functions
     (
         [SqrtOp(), Var('x'), ExponentOp(), Var('y')],
@@ -298,7 +298,7 @@ rpn_precedence_cases = [
         [Var('x'), ExponentOp(), NegationOp(), Pi()],
         [Var('x'), Pi(), NegationOp(), ExponentOp()]
     ),
-    
+
     # factorial is highest precedence
     (
         [4, PlusOp(), 5, FactorialOp()],
@@ -309,7 +309,7 @@ rpn_precedence_cases = [
         [4, 5, FactorialOp(), ExponentOp()]
     ),
     (
-        [TanOp(), Var('x'), FactorialOp()], 
+        [TanOp(), Var('x'), FactorialOp()],
         [Var('x'), FactorialOp(), TanOp()]
     ),
 ]
@@ -409,17 +409,17 @@ rpn_parens_cases = [
     (['(', 3, ')']                    , [3]),
     (['(', '(', 3, ')', ')']          , [3]),
     (['(', '(', 3, '(', ')', ')', ')'], [3]),
-    
+
     ([3, TimesOp(), '(', Var('x'), ')']          , [3, Var('x'), TimesOp()]),
     (['(', 3, ')', TimesOp(), Var('x')]          , [3, Var('x'), TimesOp()]),
     (['(', 3, ')', TimesOp(), '(', Var('x'), ')'], [3, Var('x'), TimesOp()]),
-    
+
     (
         ['(', 3j, PlusOp(), 4, ')', TimesOp(), '(', Var('x'), PlusOp(), Var('y'), ')'],
         [3j, 4, PlusOp(), Var('x'), Var('y'), PlusOp(), TimesOp()]
     ),
     (
-        [SqrtOp(), '(', Var('x'), ')', ExponentOp(), Var('y')], 
+        [SqrtOp(), '(', Var('x'), ')', ExponentOp(), Var('y')],
         [Var('x'), SqrtOp(), Var('y'), ExponentOp()]
     ),
     (
@@ -432,7 +432,7 @@ rpn_user_functions_cases = [
     ([UserFunction('f', [Var('x')])]          , ['f[x]']  ),
     ([UserFunction('f', [Var('x'), Var('y')])], ['f[x,y]']),
     (
-        [Var('x'), PlusOp(), UserFunction('f', [Var('x'), Var('y')])], 
+        [Var('x'), PlusOp(), UserFunction('f', [Var('x'), Var('y')])],
         ['x', 'f[x,y]', '+']
     ),
 ]
@@ -441,7 +441,7 @@ rpn_arg_delimiter_cases = [
     ([ARG_DELIM, ARG_DELIM, ARG_DELIM]          , []),
     ([3, ARG_DELIM, 4, ARG_DELIM, 5]            , [3, 4, 5]),
     (
-        [UserFunction('f', [Var('x'), Var('y'), Var('z')], 5), '(', 4, ARG_DELIM, 5, ARG_DELIM, 6, ')'], 
+        [UserFunction('f', [Var('x'), Var('y'), Var('z')], 5), '(', 4, ARG_DELIM, 5, ARG_DELIM, 6, ')'],
         [4, 5, 6, UserFunction('f', [Var('x'), Var('y'), Var('z')], 5)]
     ),
 ]
@@ -468,9 +468,9 @@ tree_operand_order_cases = [
     ([3j, 1.2, PlusOp()]           , '3j 1.2 +'),
     ([Var('x')]                    , 'x'       ),
     ([Var('x'), Var('y'), PlusOp()], 'x y +'   ),
-    
+
     ([Var('x'), Var('y'), PlusOp(), Var('z'), TimesOp()], 'x y + z *'),
-    
+
     ([UserFunction('f', [], node(5))]                                         , 'f[]'),
     ([3, UserFunction('f', [Var('x')], node(5))]                              , '3 f[x]'),
     ([Var('x'), UserFunction('f', [Var('x')], node(5))]                       , 'x f[x]'),
@@ -493,14 +493,14 @@ tree_reduce_cases = [
     ([1.2]     , '1.2'),
     ([3j]      , '3j' ),
     ([Var('x')], 'x'  ),
-    
+
     ([1, 2, PlusOp()]    , '3'      ),
     ([1.1, 2.2, SubOp()] , '-1.1'   ),
     ([1j, 1j, TimesOp()] , '(-1+0j)'),
     ([5, 4, DivideOp()]  , '1.25'   ),
     ([5, 4, ModulusOp()] , '1'      ),
     ([3, 4, ExponentOp()], '81'     ),
-    
+
     ([1, 2, PlusOp(), 3, PlusOp()]        , '6'                  ),
     ([1, 2, SubOp(), 3, SubOp()]          , '-4'                 ),
     ([1, 2, TimesOp(), 3, TimesOp()]      , '6'                  ),
@@ -508,14 +508,14 @@ tree_reduce_cases = [
     ([1, 2, 3, DivideOp(), DivideOp()]    , '1.5'                ),
     ([2, 3, 2, ExponentOp(), ExponentOp()], '512'                ),
     ([2, 3, ExponentOp(), 2, ExponentOp()], '64'                 ),
-    
+
     ([1j, 1j, PlusOp()]            , '2j'     ),
     ([3j, 2, SubOp()]              , '(-2+3j)'),
     ([Pi(), CosOp()]               , 'pi cos' ),
     ([E(), CosOp()]                , 'e cos'  ),
     ([Var('x'), Var('x'), PlusOp()], 'x x +'  ),
     ([Var('x'), Var('y'), PlusOp()], 'x y +'  ),
-    
+
     ([2, 2j, PlusOp(), 3, 3j, PlusOp(), TimesOp()], '12j'),
 ]
 
@@ -524,17 +524,17 @@ tree_reduce_user_funcs_cases = [
     ([UserFunction('f', [], node(5))]                                 , '5'),
     ([UserFunction('f', [], node(5))]                                 , '5'),
     ([UserFunction('f', [], node(Var('x')))]                          , 'x'),
-    
+
     # single argument
     ([3, UserFunction('f', [Var('x')], node(5))]                      , '5'),
     ([3, UserFunction('f', [Var('x')], node(Var('x')))]               , '3'),
     ([Var('y'), UserFunction('f', [Var('x')], node(5))]               , '5'),
     ([Var('y'), UserFunction('f', [Var('x')], node(Var('x')))]        , 'y'),
-    
+
     # multiple arguments
     ([5, Var('z'), UserFunction('f', [Var('x'), Var('y')], node(Var('x')))]        , '5'),
     ([5, Var('z'), UserFunction('f', [Var('x'), Var('y')], node(Var('y')))]        , 'z'),
-        
+
     ([2, 5, Var('y'), UserFunction('f', [Var('x'), Var('y'), Var('z')], node(5))]  , '5'),
 ]
 
@@ -551,14 +551,14 @@ implicit_mult_literals_cases = [
     ([3j]      , [3j]      ),
     ([E()]     , [E()]     ),
     ([Var('x')], [Var('x')]),
-    
+
     ([4, Var('x')], [4, ImplicitMultOp(), Var('x')]),
     ([Var('x'), 4], [Var('x'), ImplicitMultOp(), 4]),
     ([4, Pi()]    , [4, ImplicitMultOp(), Pi()]    ),
     ([Pi(), 4]    , [Pi(), ImplicitMultOp(), 4]    ),
-    
+
     (
-        [E(), 3j, Var('x'), 1.5], 
+        [E(), 3j, Var('x'), 1.5],
         [E(), ImplicitMultOp(), 3j, ImplicitMultOp(), Var('x'), ImplicitMultOp(), 1.5]
     ),
 ]
@@ -587,7 +587,7 @@ implicit_mult_functions_cases = [
 
 implicit_mult_combined_cases = [
     (
-        [1, DivideOp(), Var('x'),                   Var('y'),            CosOp(), Var('x')], 
+        [1, DivideOp(), Var('x'),                   Var('y'),            CosOp(), Var('x')],
         [1, DivideOp(), Var('x'), ImplicitMultOp(), Var('y'), TimesOp(), CosOp(), Var('x')]
     ),
     (
@@ -595,17 +595,17 @@ implicit_mult_combined_cases = [
         [Var('x'), ImplicitMultOp(), Var('y'), ExponentOp(), Var('y'), ImplicitMultOp(), Var('z')]
     ),
     (
-        [4, CosOp(), 5, SinOp(), 4, FactorialOp(), Pi(), Var('y'), CosOp(), E()], 
-        [4, TimesOp(), CosOp(), 5, TimesOp(), SinOp(), 4, FactorialOp(), 
+        [4, CosOp(), 5, SinOp(), 4, FactorialOp(), Pi(), Var('y'), CosOp(), E()],
+        [4, TimesOp(), CosOp(), 5, TimesOp(), SinOp(), 4, FactorialOp(),
             ImplicitMultOp(), Pi(), ImplicitMultOp(), Var('y'), TimesOp(), CosOp(), E()]
     ),
     (
-        [4, CosOp(), 5, Var('x'), TimesOp(), 5, SinOp(), 4, Pi(), Var('y'), CosOp(), E()], 
-        [4, TimesOp(), CosOp(), 5, ImplicitMultOp(), Var('x'), TimesOp(), 5, TimesOp(), 
+        [4, CosOp(), 5, Var('x'), TimesOp(), 5, SinOp(), 4, Pi(), Var('y'), CosOp(), E()],
+        [4, TimesOp(), CosOp(), 5, ImplicitMultOp(), Var('x'), TimesOp(), 5, TimesOp(),
             SinOp(), 4, ImplicitMultOp(), Pi(), ImplicitMultOp(), Var('y'), TimesOp(), CosOp(), E()]
     ),
     (
-        ['(', 4, PlusOp(), 3, ')',                   '(', 4, PlusOp(), 2, ')'],    
+        ['(', 4, PlusOp(), 3, ')',                   '(', 4, PlusOp(), 2, ')'],
         ['(', 4, PlusOp(), 3, ')', ImplicitMultOp(), '(', 4, PlusOp(), 2, ')']
     )
 ]
@@ -618,8 +618,8 @@ negation_at_beginning_cases = [
         ([SubOp()], 0),     # tokens, index-of-concern
         ([NegationOp()], 0)   # tokens, change in len(tokens)
     ),
-    (   
-        ([SubOp(), 1], 0), 
+    (
+        ([SubOp(), 1], 0),
         ([NegationOp(), 1], 0)
     ),
     (
@@ -646,7 +646,7 @@ negation_plus_minus_cases = [
         ([NegationOp(), Var('x')], -1)
     ),
     (
-        ([Var('x'), PlusOp(), SubOp(), Var('y')], 2), 
+        ([Var('x'), PlusOp(), SubOp(), Var('y')], 2),
         ([Var('x'), SubOp(), Var('y')], -1)
     ),
     (
@@ -685,12 +685,12 @@ apply_implicit_mult_cases = [
     ([4, Pi()]    , [4, ImplicitMultOp(), Pi()]    ),
     ([Pi(), 4]    , [Pi(), ImplicitMultOp(), 4]    ),
     (
-        [E(), 3j, Var('x'), 1.5], 
+        [E(), 3j, Var('x'), 1.5],
         [E(), ImplicitMultOp(), 3j, ImplicitMultOp(), Var('x'), ImplicitMultOp(), 1.5]
     ),
     (
         [CosOp(), Var('x'), Var('y'), SinOp(), Var('x'), Var('y')],
-        [CosOp(), Var('x'), ImplicitMultOp(), Var('y'), TimesOp(), 
+        [CosOp(), Var('x'), ImplicitMultOp(), Var('y'), TimesOp(),
             SinOp(), Var('x'), ImplicitMultOp(), Var('y')],
     ),
 ]
@@ -699,7 +699,7 @@ apply_negation_cases = [
     ([Var('x'), SubOp(), 3]                  , [Var('x'), SubOp(), 3] ),
     ([Var('x'), SubOp(), SubOp(), 3]         , [Var('x'), PlusOp(), 3]),
     ([Var('x'), SubOp(), SubOp(), SubOp(), 3], [Var('x'), SubOp(), 3] ),
-    
+
     ([Var('x'), PlusOp(), SubOp(), 3]                                      , [Var('x'), SubOp(), 3] ),
     ([Var('x'), PlusOp(), SubOp(), PlusOp(), SubOp(), 3]                   , [Var('x'), PlusOp(), 3]),
     ([Var('x'), PlusOp(), SubOp(), SubOp(), PlusOp(), SubOp(), 3]          , [Var('x'), SubOp(), 3] ),
@@ -709,7 +709,7 @@ apply_negation_cases = [
     ([Var('x'), SubOp(), PlusOp(), SubOp(), 3]                   , [Var('x'), PlusOp(), 3]),
     ([Var('x'), SubOp(), PlusOp(), SubOp(), PlusOp(), SubOp(), 3], [Var('x'), SubOp(), 3] ),
     ([Var('x'), SubOp(), SubOp(), SubOp(), PlusOp(), SubOp(), 3] , [Var('x'), PlusOp(), 3]),
-    
+
     ([SubOp(), Var('x')]                   , [NegationOp(), Var('x')]                        ),
     ([SubOp(), SubOp(), Var('x')]          , [Var('x')]                                      ),
     (['(', SubOp(), Var('x'), ')']         , ['(', NegationOp(), Var('x'), ')']              ),
@@ -719,18 +719,18 @@ apply_negation_cases = [
     ([CosOp(), SubOp(), SubOp(), Var('x')] , [CosOp(), NegationOp(), NegationOp(), Var('x')] ),
     ([CosOp(), '(', SubOp(), Var('x'), ')'], [CosOp(), '(', NegationOp(), Var('x'), ')']     ),
     (
-        [CosOp(), '(', SubOp(), SubOp(), Var('x'), ')'], 
+        [CosOp(), '(', SubOp(), SubOp(), Var('x'), ')'],
         [CosOp(), '(', NegationOp(), NegationOp(), Var('x'), ')']),
     (
-        [Var('x'), PlusOp(), SubOp(), CosOp(), SubOp(), SubOp(), Var('x')], 
+        [Var('x'), PlusOp(), SubOp(), CosOp(), SubOp(), SubOp(), Var('x')],
         [Var('x'), SubOp(), CosOp(), NegationOp(), NegationOp(), Var('x')]
     ),
-    
+
     # we do not resolve multiple plus-signs in a row
     ([Var('x'), PlusOp(), PlusOp(), 3]          , [Var('x'), PlusOp(), PlusOp(), 3]          ),
     ([Var('x'), PlusOp(), PlusOp(), PlusOp(), 3], [Var('x'), PlusOp(), PlusOp(), PlusOp(), 3]),
     ([Var('x'), SubOp(), SubOp(), PlusOp(), 3]  , [Var('x'), PlusOp(), PlusOp(), 3]          ),
-    
+
     # we also do not resolve '-+' ocurrences
     ([Var('x'), SubOp(), PlusOp(), 3]       , [Var('x'), SubOp(), PlusOp(), 3]),
     ([Var('x'), PlusOp(), SubOp(), PlusOp(), 3]  , [Var('x'), SubOp(), PlusOp(), 3]),
@@ -747,4 +747,3 @@ apply_combined_cases = [
         [NegationOp(), Var('x'), TimesOp(), CosOp(), NegationOp(), 3, ImplicitMultOp(), Var('x')]
     ),
 ]
-

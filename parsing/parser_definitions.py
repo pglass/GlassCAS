@@ -1,7 +1,7 @@
 '''
 parser_definitions.py
 
-This defines a number of classes to represent operators, constants, 
+This defines a number of classes to represent operators, constants,
 variables, and user-defined functions
 
 This also contains dictionaries that map string tokens to classes:
@@ -18,7 +18,7 @@ This also contains dictionaries that map string tokens to classes:
       'diff'          : DerivativeOp,
       'D'             : DerivativeOp,
 
-    NOTE: There may be issues having operator strings within other operator 
+    NOTE: There may be issues having operator strings within other operator
     strings. For example, the following should work fine:
       '/' : DivideOp,
       'd/dx' : DeriviativeOp,
@@ -54,32 +54,32 @@ RIGHT = 1
 
 class GeneralOperator(object):
     ''' Base class and interface for all operator objects '''
-    
+
     def __init__(self, name=None, precedence=None, associativity=None, num_operands=None):
         self.name = name
         self.precedence = precedence
         self.associativity = associativity
         self.num_operands = num_operands
-    
+
     def __str__(self):
         return str(self.name)
-        
+
     def __repr__(self):
         return self.__class__.__name__ + '()'
-        
+
     def __eq__(self, other):
         try:
             return str(self) == str(other)
         except:
             return False
-    
+
     def __len__(self):
         return len(self.name)
-    
+
     def check_operands(self, *operands):
         if len(operands) < self.num_operands:
             raise SyntaxError("Too few operands for %s" % self.name)
-        
+
     def apply(self, *operands):
         ''' Apply this operator to the given operands and return the result '''
         raise NotImplementedError(
@@ -92,27 +92,27 @@ class GeneralOperator(object):
 class InfixOp(GeneralOperator):
     def __init__(self, name=None, precedence=None, associativity=None):
         super().__init__(name=name, precedence=precedence, associativity=associativity, num_operands=2)
-    
+
 class PlusOp(InfixOp):
     def __init__(self):
         super().__init__('+', precedence=1, associativity=LEFT)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return sum(operands)
-    
+
 class SubOp(InfixOp):
     def __init__(self):
         super().__init__('-', precedence=1, associativity=LEFT)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return operands[0] - sum(operands[1:])
-        
+
 class TimesOp(InfixOp):
     def __init__(self):
         super().__init__('*', precedence=2, associativity=LEFT)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         prod = 1
@@ -121,7 +121,7 @@ class TimesOp(InfixOp):
         return prod
 
 class ImplicitMultOp(TimesOp):
-    ''' 
+    '''
     This is a subclass of TimesOp, since we usually treat this the same.
     '''
     def __init__(self):
@@ -129,29 +129,29 @@ class ImplicitMultOp(TimesOp):
         self.name = IMPLICIT_MULT
         self.precedence = 3.5
         # super().__init__(IMPLICIT_MULT, precedence=3.5, associativity=LEFT)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         prod = 1
         for e in operands:
             prod *= e
         return prod
-        
+
 class DivideOp(InfixOp):
     def __init__(self):
         super().__init__('/', precedence=2, associativity=LEFT)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         quotient = operands[0]
         for e in operands[1:]:
             quotient /= e
         return quotient
-    
+
 class ModulusOp(InfixOp):
     def __init__(self):
         super().__init__('%', precedence=2, associativity=LEFT)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         result = operands[0]
@@ -162,18 +162,18 @@ class ModulusOp(InfixOp):
 class ExponentOp(InfixOp):
     def __init__(self):
         super().__init__('^', precedence=4, associativity=RIGHT)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         result = operands[-1]
         for e in reversed(operands[:-1]):
             result = e ** result
         return result
-        
+
 class EqualsOp(InfixOp):
     def __init__(self):
         super().__init__('=', precedence=0, associativity=LEFT)
-        
+
     def apply(self, *operands):
         raise NotImplementedError(
             "apply() is not applicable for %s" % self.name
@@ -182,12 +182,12 @@ class EqualsOp(InfixOp):
 class DefinedAsOp(InfixOp):
     def __init__(self):
         super().__init__(':=', precedence=0, associativity=LEFT)
-        
+
     def apply(self, *operands):
         raise NotImplementedError(
             "apply() is not applicable for %s" % self.name
         )
-        
+
 ########################################
 # POSTFIX FUNCTIONS/OPERATORS
 ########################################
@@ -198,15 +198,15 @@ class PostfixOp(GeneralOperator):
 class PrecZeroPostfixOp(PostfixOp):
     def __init__(self):
         super().__init__(name='Post(0)', precedence=0, associativity=LEFT, num_operands=1)
-        
+
 class PrecThreePostfixOp(PostfixOp):
     def __init__(self):
         super().__init__(name='Post(3)', precedence=3, associativity=LEFT, num_operands=1)
-        
+
 class FactorialOp(PostfixOp):
     def __init__(self):
         super().__init__(name='!', precedence=5, associativity=LEFT, num_operands=1)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return math.factorial(operands[0])
@@ -225,35 +225,35 @@ class PrecZeroPrefixOp(PrefixOp):
 class PrecFivePrefixOp(PrefixOp):
     def __init__(self):
         super().__init__("Prefix(5)", precedence=5, associativity=RIGHT, num_operands=1)
-        
+
 class NegationOp(PrefixOp):
     def __init__(self):
         super().__init__(NEG_OP, precedence=3, associativity=RIGHT, num_operands=1)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return -operands[0]
-    
+
 class SqrtOp(PrefixOp):
     def __init__(self):
         super().__init__('sqrt', precedence=3, associativity=RIGHT, num_operands=1)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return cmath.sqrt(operands[0])
-        
+
 class CosOp(PrefixOp):
     def __init__(self):
         super().__init__('cos', precedence=3, associativity=RIGHT, num_operands=1)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
-        return cmath.cos(operands[0])        
-        
+        return cmath.cos(operands[0])
+
 class SinOp(PrefixOp):
     def __init__(self):
         super().__init__('sin', precedence=3, associativity=RIGHT, num_operands=1)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return cmath.sin(operands[0])
@@ -261,7 +261,7 @@ class SinOp(PrefixOp):
 class TanOp(PrefixOp):
     def __init__(self):
         super().__init__('tan', precedence=3, associativity=RIGHT, num_operands=1)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return cmath.tan(operands[0])
@@ -269,7 +269,7 @@ class TanOp(PrefixOp):
 class LogEOp(PrefixOp):
     def __init__(self):
         super().__init__('ln', precedence=3, associativity=RIGHT, num_operands=1)
-    
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return cmath.log(operands[0])
@@ -277,18 +277,18 @@ class LogEOp(PrefixOp):
 class LogTenOp(PrefixOp):
     def __init__(self):
         super().__init__('log', precedence=3, associativity=RIGHT, num_operands=1)
-        
+
     def apply(self, *operands):
         self.check_operands(*operands)
         return cmath.log10(operands[0])
 
 class DerivativeOp(PrefixOp):
-  def __init__(self):
-    super().__init__('derivative', precedence=3, associativity=RIGHT, num_operands=1)
+    def __init__(self):
+        super().__init__('derivative', precedence=3, associativity=RIGHT, num_operands=1)
 
-  def apply(self, *operands):
-    self.check_operands(*operands)
-    return parsing.visitors.differentiater().visit(operands[0])
+    def apply(self, *operands):
+        self.check_operands(*operands)
+        return parsing.visitors.differentiater().visit(operands[0])
 
 
 ########################################
@@ -298,48 +298,48 @@ class UserFunction(PrefixOp):
     ''' Represent f[v1, v2, ..., vn] = <expression> '''
     def __init__(self, name, operand_list=[], value=None):
         super().__init__(
-            name=name, 
+            name=name,
             precedence=3,
-            associativity=RIGHT, 
+            associativity=RIGHT,
             num_operands=len(operand_list)
         )
 
         self.operand_list = operand_list
         self.value = value
-    
+
     def __str__(self):
         result = str(self.name)
         result += '['
         for e in self.operand_list[:-1]:
             result += str(e) + ','
-        
+
         try:
             result += str(self.operand_list[-1])
         except IndexError:
             pass
         result += ']'
-        
+
         return result
-    
+
     def __repr__(self):
         return "UserFunction(%s = %r)" % (self, self.value)
-        
+
     def __eq__(self, other):
         return str(self) == str(other)
-    
+
     def check_operands(self, *operands):
         if len(self.operand_list) < len(operands):
             raise SyntaxError("Too few operands for %s" % self.name)
         if len(self.operand_list) > len(operands):
             raise SyntaxError("Not enough operands for %s" % self.name)
 
-    
+
     def apply(self, *operands):
         # print("applying %s%s" % (self.name, operands))
         if self.value != None:
             self.check_operands(*operands)
 
-            # node.replace works for a single (symbol, value) pair and 
+            # node.replace works for a single (symbol, value) pair and
             # produces a copy of the tree for each substitution, which is
             # both inefficient and ugly to write.
             if len(operands) > 0:
@@ -351,7 +351,7 @@ class UserFunction(PrefixOp):
             else:
                 # cannot return the same instance of this function's body
                 return parsing.node.node(self.value)
-        return None      
+        return None
 
 ########################################
 # VARIABLES/CONSTANTS
@@ -365,27 +365,27 @@ class Var(object):
         return str(self.name)
     def __repr__(self):
         return "%s(%s = %r)" % (self.__class__.__name__, self.name, self.value)
-        
+
     def __eq__(self, other):
         try:
             return str(self) == str(other)
         except:
             return False
-    
+
     def __len__(self):
         return len(self.name)
-            
+
 class Constant(Var):
     def __init__(self, name, value):
         super().__init__(name, value)
-    
+
     def __repr__(self):
         return "%s(%s = %s)" % (self.__class__.__name__, self.name, self.value)
-    
+
 class E(Constant):
     def __init__(self):
         super().__init__('e', cmath.e)
-        
+
 class Pi(Constant):
     def __init__(self):
         super().__init__('pi', cmath.pi)

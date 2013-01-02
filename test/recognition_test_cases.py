@@ -2,7 +2,7 @@
 Test cases for expression type determination.
 
 Technically, these test recognition.recognize.visit,
-but each set of test cases is intended for 
+but each set of test cases is intended for
 a particular Expr.resolve method
 '''
 
@@ -26,9 +26,9 @@ constant_expr_on_left_cases = [
   ("3 * (x^2 + 4*x + 1)", PolynomialExpr(Var("x"), degree=2)  ),
 #  ("2 / x"      , PolynomialExpr(Var("x"), degree=-1) ),
   (
-    "3 / x", 
+    "3 / x",
     RationalExpr(
-      PolynomialExpr(Var("x"), degree = 0), 
+      PolynomialExpr(Var("x"), degree = 0),
       PolynomialExpr(Var("x"), degree = 1)
     )
   ),
@@ -96,7 +96,7 @@ polynomial_expr_on_left_cases = [
 # test RationalExpr.resolve
 rational_expr_on_left_cases = [
   (
-    "(1/x)", 
+    "(1/x)",
     RationalExpr(
       ConstantExpr(1, var = Var("x")), # ConstantExpr subclasses PolynomialExpr
       PolynomialExpr(Var("x"), degree=1)
@@ -172,7 +172,7 @@ rational_expr_on_left_cases = [
       PolynomialExpr(Var("x"), degree=3),
       PolynomialExpr(Var("x"), degree=1)
     )
-  ), 
+  ),
   (
     "(1/x) / x",
     RationalExpr(
@@ -208,7 +208,7 @@ rational_expr_on_left_cases = [
       PolynomialExpr(Var("x"), degree=1)
     )
   ),
-  
+
   (
     "(2/x) ^ 2",
     RationalExpr(
@@ -258,7 +258,7 @@ equation_expr_cases = [
     )
   ),
   (
-    "3 + 4 ^ 2 - 5 = 5 ^ 2 + 1", 
+    "3 + 4 ^ 2 - 5 = 5 ^ 2 + 1",
     EquationExpr(ConstantExpr(14), ConstantExpr(26))
   ),
   (
