@@ -35,7 +35,6 @@ NOTES:
 
 '''
 
-from parsing.node import node
 from parsing.parser_definitions import *
 from parsing.expression_types import *
 import numbers

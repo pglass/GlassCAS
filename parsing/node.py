@@ -1,4 +1,5 @@
 import parsing.visitors
+import parsing.recognition
 import numbers
 
 class node(object):
@@ -26,7 +27,7 @@ class node(object):
         return visitor.visit(self)
 
     def assign_types(self):
-        self.accept(parsing.recognizition.Recognizer(assign_types = True))
+        self.accept(parsing.recognition.Recognizer(assign_types = True))
 
     def __repr__(self):
         '''

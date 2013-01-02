@@ -46,12 +46,14 @@ if __name__ == '__main__':
             tree = parser.to_tree(rpn)
 
             if ARGS.types:
-                print("Expression has type: ", tree.accept(parsing.recognition.Recognizer()))
+                tree.assign_types()
+                print("Expression has type:", tree.expr_type)
 
             reduced_tree = tree.reduce(ARGS.replace_constants)
 
             if ARGS.types:
-                print("Reduced expression has type:", tree.accept(parsing.recognition.Recognizer()))
+                tree.assign_types()
+                print("Reduced expression has type:", tree.expr_type)
 
             parser.update_symbol_table(reduced_tree)
 
