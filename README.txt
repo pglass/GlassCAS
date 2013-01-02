@@ -7,7 +7,7 @@ This has been tested under Python 3:
 demo_calculator.py is a calculator to demonstrate current capabilities:
     '^' is used for exponentiation
     '%' is used for modulus
-    'j' is used for the imaginary unit (matches Python complex type)
+    'j' is used for the imaginary unit (matches Python's complex type)
     'e' is Euler's number
     'pi' is pi
   An '@' is inserted for every implicit multiplication:
@@ -15,7 +15,7 @@ demo_calculator.py is a calculator to demonstrate current capabilities:
     @
       3
       x
-  There's single global symbol table for function definitions.
+  There's a single global symbol table for function definitions.
   To define functions, use brackets and ':=':
     >> f[x] := 3x + 4
     >> g[x,y,z] := x + y + z
@@ -31,8 +31,10 @@ And you can run demo_calculator.py with the '--types' flag to see type recogniti
     >> 1/x
     Expression has type:  RationalExpr[ConstantExpr[1], PolynomialExpr[Var[x], degree=1]]
     Reduced expression has type: RationalExpr[ConstantExpr[1], PolynomialExpr[Var[x], degree=1]]
+    ...
 
     >> (x^2 + 3x + 4) * (x^5 + 4x^3 + 1)
     Expression has type:  PolynomialExpr[Var[x], degree=7]
     Reduced expression has type: PolynomialExpr[Var[x], degree=7]
+    ...
 
