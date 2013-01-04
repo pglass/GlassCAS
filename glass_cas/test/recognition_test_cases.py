@@ -6,8 +6,7 @@ but each set of test cases is intended for
 a particular Expr.resolve method
 '''
 
-from parsing.recognition import *
-from parsing.expression_types import *
+from ..expression_types import *
 
 # for Constant
 constant_expr_on_left_cases = [

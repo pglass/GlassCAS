@@ -2,7 +2,7 @@
 run_tests.py
 '''
 
-from test.parsing_test import (
+from glass_cas.test.parsing_test import (
     TokenizeTestCases,
     RPNConversionTestCases,
     TreeTestCases,
@@ -11,8 +11,12 @@ from test.parsing_test import (
     ApplyTransformationsTestCases
 )
 
-from test.recognition_test import (
-  RecognitionTestCases
+from glass_cas.test.recognition_test import (
+    RecognitionTestCases
+)
+
+from glass_cas.test.expansion_test import (
+    ExpansionTestCases
 )
 
 if __name__ == '__main__':

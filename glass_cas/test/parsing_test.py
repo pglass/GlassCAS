@@ -3,9 +3,9 @@ Don't run this. Use GlassCAS/run_tests.py.
 '''
 
 import unittest
-import parsing.parsing
-import test.parsing_test_cases as pt_cases
-import test.test_util
+from ..parsing import parsing
+from . import parsing_test_cases as pt_cases
+from . import test_util
 
 class TokenizeTestCases(unittest.TestCase):
     '''
@@ -34,35 +34,35 @@ class TokenizeTestCases(unittest.TestCase):
     @staticmethod
     def get_test_result(case):
         # do tests without worrying about the parser's symbol table
-        parser = parsing.parsing.Parser()
+        parser = parsing.Parser()
         return parser.tokenize(case)
 
     def test_constants(self):
-        test.test_util.run_through_cases(self, self.constants_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.constants_cases, self.get_test_result)
 
     def test_functions(self):
-        test.test_util.run_through_cases(self, self.functions_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.functions_cases, self.get_test_result)
 
     def test_variables(self):
-        test.test_util.run_through_cases(self, self.variables_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.variables_cases, self.get_test_result)
 
     def test_parens(self):
-        test.test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
 
     def test_reals(self):
-        test.test_util.run_through_cases(self, self.reals_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.reals_cases, self.get_test_result)
 
     def test_complex_numbers(self):
-        test.test_util.run_through_cases(self, self.complex_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.complex_cases, self.get_test_result)
 
     def test_combined(self):
-        test.test_util.run_through_cases(self, self.combined_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.combined_cases, self.get_test_result)
 
     def test_user_functions(self):
-        test.test_util.run_through_cases(self, self.user_func_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.user_func_cases, self.get_test_result)
 
     def test_arg_delimiter(self):
-        test.test_util.run_through_cases(self, self.arg_delim_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.arg_delim_cases, self.get_test_result)
 
     def test_bad_inputs(self):
         for case in self.bad_input_cases:
@@ -90,29 +90,29 @@ class RPNConversionTestCases(unittest.TestCase):
     @staticmethod
     def get_test_result(case):
         # do tests without worrying about the parser's symbol table
-        parser = parsing.parsing.Parser()
+        parser = parsing.Parser()
         return parser.to_rpn(case)
 
     def test_basic_correctness(self):
-        test.test_util.run_through_cases(self, self.basic_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.basic_cases, self.get_test_result)
 
     def test_precedences(self):
-        test.test_util.run_through_cases(self, self.precedence_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.precedence_cases, self.get_test_result)
 
     def test_prefix_support(self):
-        test.test_util.run_through_cases(self, self.prefix_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.prefix_cases, self.get_test_result)
 
     def test_postfix_support(self):
-        test.test_util.run_through_cases(self, self.postfix_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.postfix_cases, self.get_test_result)
 
     def test_parens(self):
-        test.test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
 
     def test_user_functions(self):
-        test.test_util.run_through_cases(self, self.user_func_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.user_func_cases, self.get_test_result)
 
     def test_arg_delimiters(self):
-        test.test_util.run_through_cases(self, self.arg_delim_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.arg_delim_cases, self.get_test_result)
 
     def test_bad_inputs(self):
         for key in self.bad_input_cases:
@@ -136,38 +136,38 @@ class TreeTestCases(unittest.TestCase):
 
     def test_operand_order(self):
         def get_test_result(case):
-            return repr(parsing.parsing.Parser().to_tree(case))
+            return repr(parsing.Parser().to_tree(case))
 
-        test.test_util.run_through_cases(self, self.operand_order_cases, get_test_result)
+        test_util.run_through_cases(self, self.operand_order_cases, get_test_result)
 
     def test_reduce_predefined_ops(self):
         def get_test_result(case):
-            tree = parsing.parsing.Parser().to_tree(case)
+            tree = parsing.Parser().to_tree(case)
             result = tree.reduce()
             return repr(result)
 
-        test.test_util.run_through_cases(self, self.reduce_cases, get_test_result)
+        test_util.run_through_cases(self, self.reduce_cases, get_test_result)
 
     def test_reduce_user_funcs(self):
         def get_test_result(case):
-            tree = parsing.parsing.Parser().to_tree(case)
+            tree = parsing.Parser().to_tree(case)
             result = tree.reduce()
             return repr(result)
 
-        test.test_util.run_through_cases(self, self.user_funcs_cases, get_test_result)
+        test_util.run_through_cases(self, self.user_funcs_cases, get_test_result)
 
     def test_constant_replacement(self):
         def get_test_result(case):
-            tree = parsing.parsing.Parser().to_tree(case)
+            tree = parsing.Parser().to_tree(case)
             result = tree.reduce(replace_constants = True)
             return repr(result)
 
-        test.test_util.run_through_cases(self, self.sub_constants_cases, get_test_result)
+        test_util.run_through_cases(self, self.sub_constants_cases, get_test_result)
 
     def test_bad_inputs(self):
         for key in self.bad_input_cases:
             with self.assertRaises(SyntaxError):
-                parsing.parsing.Parser().to_tree(key)
+                parsing.Parser().to_tree(key)
 
 class InsertImplicitMultOpsTestCases(unittest.TestCase):
 
@@ -179,17 +179,17 @@ class InsertImplicitMultOpsTestCases(unittest.TestCase):
 
     @staticmethod
     def get_test_result(tokens):
-        parsing.parsing.insert_implicit_mult_ops(tokens)
+        parsing.insert_implicit_mult_ops(tokens)
         return tokens
 
     def test_literals_handling(self):
-        test.test_util.run_through_cases(self, self.literals_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.literals_cases, self.get_test_result)
     def test_parens_handling(self):
-        test.test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.parens_cases, self.get_test_result)
     def test_functions_handling(self):
-        test.test_util.run_through_cases(self, self.functions_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.functions_cases, self.get_test_result)
     def test_combined_cases(self):
-        test.test_util.run_through_cases(self, self.combined_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.combined_cases, self.get_test_result)
 
 class TransformIfNegationTestCases(unittest.TestCase):
 
@@ -202,17 +202,17 @@ class TransformIfNegationTestCases(unittest.TestCase):
     @staticmethod
     def get_test_result(case):
         tokens, i = case
-        len_diff = parsing.parsing.transform_if_negation(tokens, i)
+        len_diff = parsing.transform_if_negation(tokens, i)
         return tokens, len_diff
 
     def test_negation_at_beginning(self):
-        test.test_util.run_through_cases(self, self.neg_at_start_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.neg_at_start_cases, self.get_test_result)
     def test_plus_neg_handling(self):
-        test.test_util.run_through_cases(self, self.plus_neg_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.plus_neg_cases, self.get_test_result)
     def test_minus_neg_handling(self):
-        test.test_util.run_through_cases(self, self.minus_neg_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.minus_neg_cases, self.get_test_result)
     def test_func_neg_handling(self):
-        test.test_util.run_through_cases(self, self.func_neg_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.func_neg_cases, self.get_test_result)
 
 class ApplyTransformationsTestCases(unittest.TestCase):
 
@@ -224,12 +224,12 @@ class ApplyTransformationsTestCases(unittest.TestCase):
     @staticmethod
     def get_test_result(case):
         tokens = case
-        parsing.parsing.apply_transformations(tokens)
+        parsing.apply_transformations(tokens)
         return tokens
 
     def test_implicit_mult_support(self):
-        test.test_util.run_through_cases(self, self.implicit_mult_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.implicit_mult_cases, self.get_test_result)
     def test_negation_support(self):
-        test.test_util.run_through_cases(self, self.negation_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.negation_cases, self.get_test_result)
     def test_combined_support(self):
-        test.test_util.run_through_cases(self, self.combined_cases, self.get_test_result)
+        test_util.run_through_cases(self, self.combined_cases, self.get_test_result)

@@ -32,9 +32,6 @@ This also contains dictionaries that map string tokens to classes:
 '''
 
 import cmath, math
-import parsing.parsing
-import parsing.node
-import parsing.visitors
 
 REAL_NUMBER_CHARS = list('0123456789.')
 NUMBER_CHARS = REAL_NUMBER_CHARS + ['j'] # Use 'j' as sqrt(-1)
@@ -282,14 +279,23 @@ class LogTenOp(PrefixOp):
         self.check_operands(*operands)
         return cmath.log10(operands[0])
 
-class DerivativeOp(PrefixOp):
+class ExpandOp(PrefixOp):
     def __init__(self):
-        super().__init__('derivative', precedence=3, associativity=RIGHT, num_operands=1)
+        super().__init__('expand', precedence=1, associativity=RIGHT, num_operands=1)
 
     def apply(self, *operands):
-        self.check_operands(*operands)
-        return parsing.visitors.differentiater().visit(operands[0])
+        # TODO: I don't like this import here.
+        # this is to avoid circular imports since visitors imports parser_definitions
+        # Solutions?
+        #   -- maybe move these apply methods somewhere else, like to their own module
+        #   -- make a node.expand method that uses Expander; call node.expand here
+        #   -- rethink the organization/architecture of the whole program
+        #   -- or, leave the import here
+        from ..visitors import Expander
 
+        self.check_operands(*operands)
+        result = Expander().visit(operands[0])
+        return result
 
 ########################################
 # USER-DEFINED FUNCTION/OPERATOR
@@ -346,11 +352,10 @@ class UserFunction(PrefixOp):
                 result = self.value.replace(self.operand_list[0], operands[0])
                 for symbol, value in zip(self.operand_list[1:], operands[1:]):
                     result = result.replace(symbol, value)
-
                 return result.reduce()
             else:
                 # cannot return the same instance of this function's body
-                return parsing.node.node(self.value)
+                return self.value.copy()
         return None
 
 ########################################
@@ -413,4 +418,5 @@ OP_CLASS_DICT = {
     'tan'   : TanOp,
     'ln'    : LogEOp,
     'log'   : LogTenOp,
+    'expand': ExpandOp,
 }

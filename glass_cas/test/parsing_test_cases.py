@@ -9,8 +9,8 @@ Test cases for methods in parsing
          However, you still have to be particular about the input types.
 '''
 
-from parsing.parser_definitions import *
-from parsing.node import node
+from ..parsing.parser_definitions import *
+from ..node import node
 import string
 
 #

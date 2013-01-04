@@ -24,7 +24,7 @@ The essential method on all of these classes is resolve().
     2. A lot of these cases don't make sense
 '''
 
-from parsing.parser_definitions import *
+from .parsing.parser_definitions import *
 
 class Expr(object):
 

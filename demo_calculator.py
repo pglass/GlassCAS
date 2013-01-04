@@ -5,9 +5,8 @@ See parser_definitions.py for supported functions, operators, and constants.
 '''
 
 import sys, argparse, traceback
-import parsing.parsing
-import parsing.visitors
-import parsing.recognition
+
+from glass_cas.parsing import parsing
 
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
@@ -30,7 +29,7 @@ if __name__ == '__main__':
                         action="store_true")
 
     ARGS = arg_parser.parse_args()
-    parser = parsing.parsing.Parser()
+    parser = parsing.Parser()
     while True:
         uin = input('>> ')
         if len(uin) > 1 and uin in 'xxxxxx':
@@ -41,7 +40,7 @@ if __name__ == '__main__':
         tree, reduced_tree = None, None
         try:
             tokens = parser.tokenize(uin)
-            fixed_input = parsing.parsing.apply_transformations(list(tokens))
+            fixed_input = parsing.apply_transformations(list(tokens))
             rpn = parser.to_rpn(fixed_input)
             tree = parser.to_tree(rpn)
 
@@ -52,8 +51,8 @@ if __name__ == '__main__':
             reduced_tree = tree.reduce(ARGS.replace_constants)
 
             if ARGS.types:
-                tree.assign_types()
-                print("Reduced expression has type:", tree.expr_type)
+                reduced_tree.assign_types()
+                print("Reduced expression has type:", reduced_tree.expr_type)
 
             parser.update_symbol_table(reduced_tree)
 

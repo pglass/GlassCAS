@@ -1,4 +1,4 @@
-from parsing.parser_definitions import *
+from .parser_definitions import *
 import string
 
 def remove_whitespace(expr):

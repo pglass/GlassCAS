@@ -1,5 +1,4 @@
-import parsing.visitors
-import parsing.recognition
+from . import visitors
 import numbers
 
 class node(object):
@@ -27,8 +26,34 @@ class node(object):
         return visitor.visit(self)
 
     def assign_types(self):
-        self.accept(parsing.recognition.Recognizer(assign_types = True))
+        self.accept(visitors.Recognizer(assign_types = True))
 
+    def copy(self, value = None, recursive = True):
+        '''
+        This allows us to use node instances to create new nodes
+        without actually importing the node class elsewhere.
+
+        If value is not None, recursive has no effect.
+        Otherwise, if recursive is False the result node has no children.
+
+        If n is a node, and X is anything:
+            n.copy()
+                <==> node(n)
+            n.copy(recursive = False)
+                <==> node(n.value)
+            n.copy(value = X)
+                <==> node(X)
+
+        This does not copy the expr_type. You must call assign_types() afterward.
+        '''
+
+        if value != None:
+            return node(value)
+        elif not recursive:
+            return node(self.value)
+        
+        return node(self)
+       
     def __repr__(self):
         '''
         Return a string representation of this tree in RPN.
@@ -36,7 +61,7 @@ class node(object):
 
         # this is is used for evaluating test results. Best not to touch.
 
-        result = self.accept(parsing.visitors.Printer(rpn_mode = True))
+        result = self.accept(visitors.Printer(rpn_mode = True))
         return result[:-1] # strip off trailing newline
 
     def __str__(self):
@@ -44,7 +69,7 @@ class node(object):
         Produce a string representation of this tree's structure.
         '''
 
-        result = self.accept(parsing.visitors.Printer(rpn_mode = False))
+        result = self.accept(visitors.Printer(rpn_mode = False))
         return result[:-1]  # strip off trailing newline
 
     def reduce(self, replace_constants = False):
@@ -57,11 +82,11 @@ class node(object):
         replace_constants = False will leave E() in the tree.
         '''
 
-        return self.accept(parsing.visitors.Reducer(replace_constants = replace_constants))
+        return self.accept(visitors.Reducer(replace_constants = replace_constants))
 
     def replace(self, symbol, expr):
         '''
         Replace all occurrences of symbol with expr.
         '''
 
-        return self.accept(parsing.visitors.Replacer(symbol, expr))
+        return self.accept(visitors.Replacer(symbol, expr))
