@@ -119,22 +119,6 @@ class Replacer(Visitor):
 
         return result_node
 
-#    def visit(self, n):
-#
-#        result_node = node.node(n.value)
-#
-#        if str(n.value) == str(self.symbol):
-#            if isinstance(self.expr, node.node):
-#                result_node.value = self.expr.value
-#                result_node.children = self.expr.children
-#            else:
-#                result_node.value = self.expr
-#        else:
-#            for child in n.children:
-#                result_node.children.append(self.visit(child))
-#
-#        return result_node
-
 class Recognizer(object):
     '''
     The purpose of this class is to be able to tell you what kind of 
@@ -206,8 +190,9 @@ class Expander(Visitor):
 
         result = None
 
+        is_plus_or_minus = lambda c: isinstance(c, PlusOp) or isinstance(c, SubOp)
+
         if isinstance(n.value, TimesOp):
-            is_plus_or_minus = lambda c: isinstance(c, PlusOp) or isinstance(c, SubOp)
             if is_plus_or_minus(n.children[0].value):
                 if is_plus_or_minus(n.children[1].value):
                     result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
@@ -215,35 +200,36 @@ class Expander(Visitor):
                     result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
             elif is_plus_or_minus(n.children[1].value):
                 result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
+        elif isinstance(n.value, DivideOp):
+            if is_plus_or_minus(n.children[0].value):
+                result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
+
         
-        # this doesn't make changes in-place; always return a copy.
-        # this might make extra copies since distributing makes a copy.
         if result != None:
             result.children[0] = self.visit(result.children[0])
             result.children[1] = self.visit(result.children[1])
             return result
         else:
-            return n.copy()
+            # this function doesn't make changes in-place, so always return a copy.
+            # this might make extra copies since distributing makes a copy.
+            result = n.copy(recursive = False)
+            for child in n.children:
+                result.children.append(self.visit(child))
+            return result
 
     def distribute(self, A, B, operator, left_distr = True):
         '''
+        Distribute A to B over operator.
+
         B must be a node with a PlusOp or SubOp as its value.
         A can be any node.
         operator is the operator we distribute over.
-            This will be TimesOp or ImplicitMultOp. We pass it in to stay consistent.
+            This can be TimesOp or ImplicitMultOp. We pass it in to stay consistent.
+            This is also valid, in some cases, for DivideOp.
 
         If left_distr is True then perform a left distribution.
             Otherwise perform a right distribution. This is important
-            for non-commutative types.
-
-        For example,
-            Let A represent <A>, and B represent (x + y).
-            A left distribution would return a node that represents (<A> * a) + (<A> * b).
-            A right distribution would be (a * <A>) + (b * <A>)
-
-        Return a node that distributes A to the children of B over multiplication.
-
-        This assumes B has only two children.
+            for non-commutative types. 
         '''
 
         result = B.copy(recursive = False)

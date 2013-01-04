@@ -14,6 +14,8 @@ class ExpansionTestCases(unittest.TestCase):
         self.distribution_plus_cases = exp_cases.distribution_plus_cases
         self.distribution_minus_cases = exp_cases.distribution_minus_cases
         self.distribution_implicit_mult_cases = exp_cases.distribution_implicit_mult_cases
+        self.distribution_division_cases = exp_cases.distribution_division_cases
+        self.distribution_division_and_multiplication_cases = exp_cases.distribution_division_and_multiplication_cases
         
     @staticmethod
     def get_test_result(case):
@@ -35,3 +37,8 @@ class ExpansionTestCases(unittest.TestCase):
     def test_distribution_with_implicit_multiplication(self):
         test_util.run_through_cases(self, self.distribution_implicit_mult_cases, self.get_test_result, self.get_expected_result)
 
+    def test_distribution_with_division(self):
+        test_util.run_through_cases(self, self.distribution_division_cases, self.get_test_result, self.get_expected_result)
+
+    def test_distribution_with_division_and_multiplication(self):
+        test_util.run_through_cases(self, self.distribution_division_and_multiplication_cases, self.get_test_result, self.get_expected_result)
