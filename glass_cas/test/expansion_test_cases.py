@@ -65,3 +65,12 @@ distribution_division_and_multiplication_cases = [
          " + (a*y/((c*u+d*u)+(c*v+d*v)) + b*y/((c*u+d*u)+(c*v+d*v)))")
     ),
 ]
+
+distribution_negation_cases = [
+    # Signs are resolved a bit during parsing actually, so "a + -b" turns into "a - b".
+    # Put parentheses around negated terms to prevent this: "a + (-b)".
+    ("expand(-(a+b))"        , "(-a) + (-b)"),
+    ("expand(-((x+y)*(c+d)))", "(-(x*c) + (-(y*c))) + ((-(x*d)) + (-(y*d)))"),
+    ("expand(-(x+y)*(c+d))"  , "((-x*c) + (-y*c)) + ((-x*d) + (-y*d))"),
+    ("expand(-(1/x * (a+b)))", "(-((1/x)*a)) + (-((1/x)*b))"),
+]

@@ -185,37 +185,72 @@ class Recognizer(object):
 
 class Expander(Visitor):
     
+    is_plus_or_minus = lambda c: isinstance(c, PlusOp) or isinstance(c, SubOp)
+
     def visit(self, n):
-        # we'll assume the tree is binary at all +-*/^ nodes
+        # This works decently... It's slow though.
+        # there's some extra copying in distribute and map.
 
         result = None
 
-        is_plus_or_minus = lambda c: isinstance(c, PlusOp) or isinstance(c, SubOp)
-
+        # we assume the tree is binary at all +-*/^ nodes
         if isinstance(n.value, TimesOp):
-            if is_plus_or_minus(n.children[0].value):
-                if is_plus_or_minus(n.children[1].value):
+            if Expander.is_plus_or_minus(n.children[0].value):
+                if Expander.is_plus_or_minus(n.children[1].value):
                     result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
                 else:
                     result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
-            elif is_plus_or_minus(n.children[1].value):
-                result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
-        elif isinstance(n.value, DivideOp):
-            if is_plus_or_minus(n.children[0].value):
-                result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
 
-        
+                for i in range(len(result.children)):
+                    result.children[i] = self.visit(result.children[i])
+            elif Expander.is_plus_or_minus(n.children[1].value):
+                result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
+            
+                for i in range(len(result.children)):
+                    result.children[i] = self.visit(result.children[i])
+        elif isinstance(n.value, DivideOp):
+            if Expander.is_plus_or_minus(n.children[0].value):
+                result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
+                
+                for i in range(len(result.children)):
+                    result.children[i] = self.visit(result.children[i])
+        elif isinstance(n.value, NegationOp):
+            
+            result = n.copy(recursive = False)
+            for child in n.children:
+                result.children.append(self.visit(child))
+
+            if Expander.is_plus_or_minus(result.children[0].value):
+                result = self.map(result.value, result.children[0])
+
         if result != None:
-            result.children[0] = self.visit(result.children[0])
-            result.children[1] = self.visit(result.children[1])
             return result
         else:
-            # this function doesn't make changes in-place, so always return a copy.
-            # this might make extra copies since distributing makes a copy.
             result = n.copy(recursive = False)
             for child in n.children:
                 result.children.append(self.visit(child))
             return result
+
+    def map(self, func, B):
+        '''
+        Map A to each child in B.
+
+        func is a PrefixOp or PostfixOp.
+        B is any node.
+
+        Ex:
+            -(a+b) --> -a + -b
+            -(a+(b+c)) --> -a + -(b+c)
+        '''
+        
+        result = B.copy(recursive = False)
+        
+        for child in B.children:
+            new_node = B.copy(value = func)
+            new_node.children.append(child.copy())
+            result.children.append(new_node)
+
+        return result
 
     def distribute(self, A, B, operator, left_distr = True):
         '''
@@ -245,4 +280,3 @@ class Expander(Visitor):
             result.children.append(new_term)
 
         return result
- 
