@@ -2,7 +2,7 @@
 parsing.py
 
 This defines a Parser class, as well as unbound methods for optionally
-supporting other syntax, like implicit multiplication
+supporting other syntax, like implicit multiplication.
 '''
 
 from ..node import node
@@ -33,11 +33,9 @@ class Parser(object):
         Split expr into a list of tokens.
 
         A token can be:
-            a. A prefix, infix, or postfix function/operator
-            b. A variable or constant
+            a. A PrefixOp, InfixOp, or PostfixOp object
+            b. A Var or Constant object
             c. A number (int, float, or complex)
-        In cases (a) and (b), the token is an object instantiated using
-        some class in parser_defintions.py.
 
         Raises a SyntaxError if:
             1. An undefined symbol is encountered
@@ -106,11 +104,11 @@ class Parser(object):
 
     def to_rpn(self, tokens):
         '''
-        Convert the tokenized infix expression tokens to a
+        Convert the infix expression contained in tokens to a
         postfix/RPN expression using Dijsktra's Shunting-yard algorithm.
 
         This is adapted from http://en.wikipedia.org/wiki/Shunting-yard_algorithm
-        with modifcations to support postfix and prefix operators.
+        with modifications to support postfix and prefix operators.
 
         This will raise a SyntaxError for mismatched parentheses.
         '''
@@ -123,11 +121,10 @@ class Parser(object):
                 output.append(token)
             elif isinstance(token, GeneralOperator):
                 while len(stack) > 0 and isinstance(stack[-1], GeneralOperator):
-                    if (isinstance(token, InfixOp) and
-                            ((token.associativity == LEFT and
-                             token.precedence <= stack[-1].precedence) or
-                             token.precedence < stack[-1].precedence
-                            )
+                    if (isinstance(token, InfixOp) and 
+                        ((token.associativity == LEFT and
+                         token.precedence <= stack[-1].precedence) or
+                         token.precedence < stack[-1].precedence)
                         ):
                         output.append(stack.pop())
                     elif isinstance(stack[-1], PostfixOp):
@@ -165,12 +162,11 @@ class Parser(object):
 
     def to_tree(self, rpn_tokens):
         '''
-        Parse rpn_expr to a tree where rpn_expr is some list of tokens
-        in reverse polish notation, as is returned by to_RPN. This returns
+        Parse rpn_tokens to a tree where rpn_tokens is some list of tokens
+        in reverse polish notation, as is returned by to_rpn. This returns
         the root node of the tree.
 
-        Then conversion to a tree only requires knowing the number of operands
-        for each operator:
+        Conversion to a tree only requires knowing the number of operands for each operator.
             - Push numbers to a stack as we encounter them.
             - When we see a function/operator, pop off the required number of
               operands and form a tree with the operator as the root and
@@ -233,10 +229,9 @@ class Parser(object):
 
 def insert_implicit_mult_ops(tokens):
     '''
-    This inserts IMPLICIT_MULT and '*' symbols to support implicit
-    multiplication, where IMPLICIT_MULT is the implicit multiplication
-    operator with precedence 3.5 (higher than +-*/ and functions
-    but less than ^ and !).
+    This inserts ImplicitMultOp and TimesOp symbols to support implicit
+    multiplication. (Note that ImplicitMultOp has precedence slightly
+    higher than TimesOp and most functions)
 
     This implies the following evaluations for example inputs (but this
     method does not insert parens. Evaluation order comes from precedences):
@@ -251,8 +246,8 @@ def insert_implicit_mult_ops(tokens):
         "cosxy*sinyz"   -->  cos(x*y)*sin(y*z)
         "cosxysinyz"    -->  cos(x*y)*sin(y*z)
 
-    In particular, in the last examples we insert '*' rather than
-    IMPLICIT_MULT before functions where there is an implicit multiplication
+    In particular, in the last examples we insert a TimesOp rather than an
+    ImplicitMultOp before functions where there is an implicit multiplication
     (otherwise "cosxysinyz" would be evaluated as cos(x*y*sin(y*z)),
     which is probably not what was intended by the user)
 
@@ -342,7 +337,7 @@ def apply_transformations(tokens):
         1. Subtraction-negation resolution
         2. Implicit multiplication insertion
 
-    (Use this after tokenization but before conversion to RPN)
+    This is used after tokenization but before conversion to RPN.
     '''
 
     i = 0

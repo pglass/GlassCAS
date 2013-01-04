@@ -1,3 +1,9 @@
+'''
+parser_util.py
+
+Defines functions for reading tokens from or otherwise manipulating strings
+'''
+
 from .parser_definitions import *
 import string
 
@@ -103,7 +109,7 @@ def get_from_list(expr, start, value_list):
     Return an identifier beginning at index start, where the identifier
     is something in value_list. Returns None if no such identifier is found.
 
-    This is used in tokenize to grab functions and constants.
+    This is used in tokenize to lookup functions and constants.
     '''
 
     token = ''
@@ -111,7 +117,7 @@ def get_from_list(expr, start, value_list):
 
     while j < len(expr) and expr[i:j+1] in [f[:j+1 - i] for f in value_list]:
         token = expr[i:j+1]
-        if token in value_list: # in case of "pipi" or "cossin"
+        if token in value_list:
             return token
 
         j += 1
@@ -134,7 +140,7 @@ def get_user_function(expr):
         if expr[i] in string.ascii_letters:
             operands.append(Var(expr[i]))
             i += 1
-        elif expr[i] == ',':
+        elif expr[i] == ARG_DELIM:
             i += 1
         else:
             return None

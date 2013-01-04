@@ -611,12 +611,12 @@ implicit_mult_combined_cases = [
 ]
 
 #
-# test cases parsing.transform_if_negation
+# test cases for parsing.transform_if_negation
 #
 negation_at_beginning_cases = [
     (
-        ([SubOp()], 0),     # tokens, index-of-concern
-        ([NegationOp()], 0)   # tokens, change in len(tokens)
+        ([SubOp()], 0),         # tokens, index-of-concern
+        ([NegationOp()], 0)     # tokens, change in len(tokens)
     ),
     (
         ([SubOp(), 1], 0),

@@ -1,9 +1,9 @@
 '''
 Test cases for expression type determination.
 
-Technically, these test recognition.recognize.visit,
-but each set of test cases is intended for
-a particular Expr.resolve method
+These are indirect. These test recognition.Recognizer.visit, but each set of test 
+cases is intended for a particular Expr.resolve method. On top of that, we pass the
+each input through the parser.
 '''
 
 from ..expression_types import *
