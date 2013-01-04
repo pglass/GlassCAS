@@ -61,16 +61,21 @@ class node(object):
 
         # this is is used for evaluating test results. Best not to touch.
 
-        result = self.accept(visitors.Printer(rpn_mode = True))
-        return result[:-1] # strip off trailing newline
+        return self.accept(visitors.Printer(mode = visitors.Printer.POSTFIX_MODE))
 
-    def __str__(self):
+    def __str__(self, mode = visitors.Printer.INFIX_MODE):
         '''
         Produce a string representation of this tree's structure.
+
+        mode is a string that corresponds to a static member of visitors.Printer:
+            mode == "prefix" produces an unparenthesized prefix representation
+            mode == "postfix" produces an unparenthesized postfix representation
+            mode == "infix" produces a fully parenthesized infix representation
+            mode == "tree" produces a multiline tree-like representation, with 
+                children indented according to their depth.
         '''
 
-        result = self.accept(visitors.Printer(rpn_mode = False))
-        return result[:-1]  # strip off trailing newline
+        return self.accept(visitors.Printer(mode = mode))
 
     def reduce(self, replace_constants = False):
         '''

@@ -5,11 +5,6 @@ This defines a Parser class, as well as unbound methods for optionally
 supporting other syntax, like implicit multiplication
 '''
 
-#from parsing.node import node
-#from parsing.parser_definitions import *
-#from parsing.parser_util import *
-
-
 from ..node import node
 from .parser_definitions import *
 from .parser_util import *

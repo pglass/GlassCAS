@@ -328,7 +328,7 @@ class UserFunction(PrefixOp):
         return result
 
     def __repr__(self):
-        return "UserFunction(%s = %r)" % (self, self.value)
+        return "UserFunction(%s = %s)" % (self, self.value)
 
     def __eq__(self, other):
         return str(self) == str(other)

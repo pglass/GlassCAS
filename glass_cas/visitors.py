@@ -14,37 +14,104 @@ class Visitor(object):
 
 
 class Printer(Visitor):
+    
+    PREFIX_MODE  = "prefix"
+    INFIX_MODE   = "infix"
+    POSTFIX_MODE = "postfix"
+    TREE_MODE    = "tree" 
 
-    def __init__(self, rpn_mode = False):
+    def __init__(self, mode = TREE_MODE):
         '''
-        If rpn_mode is True, this it will print out as RPN.
-          otherwise, you'll get a tree-like representation
+        mode determines what representation this printer produces:
+            PREFIX_MODE  - produce a prefix representation with no parentheses
+            INFIX_MODE   - produce a fully parenthesized infix representation
+            POSTFIX_MODE - produce a postfix/rpn representatio, no parentheses
+            TREE_MODE    - produces a tree with one node per line, with
+                child nodes indented according to their depth.
+                For "(x + 2) * (y + 3)" this will print:
+                    *
+                      +
+                        x
+                        2
+                      +
+                        y
+                        2
+            Each mode can be identified, resepctively, by the strings:
+                "prefix", "infix", "postfix", "tree"
         '''
 
-        self.rpn_mode = rpn_mode
+        self.mode = mode
 
-    def visit(self, n, depth = 0):
+    def visit(self, n):
         '''
         Return a representation of the tree at node n, as a string.
+        The representation 
 
         depth is used to keep track of indentation when printing as a tree.
         '''
+        if self.mode == Printer.TREE_MODE:
+            return self.visit_tree_mode(n, 0)[:-1] # strip off trailing newline
+        elif self.mode == Printer.INFIX_MODE:
+            return self.visit_infix_mode(n)
+        else:
+            return self.visit_postfix_prefix_modes(n)[:-1] # strip off trailing space
 
+    def visit_infix_mode(self, n):
         result = ''
-
-        if not self.rpn_mode:
-            result += ("  " * depth)
+        
+        if len(n.children) == 0:
             result += str(n.value)
-            result += "\n"
 
-        for child in n.children:
-            result += self.visit(child, depth = depth + 1)
+        elif isinstance(n.value, PrefixOp):
+            # something like 'f(x,y,z)'
+            result += "%s(" % str(n.value)
+            for i in range(len(n.children) - 1):
+                result += "%s" % self.visit_infix_mode(n.children[i])
+                result += ARG_DELIM
+            result += "%s)" % self.visit_infix_mode(n.children[-1])
 
-        if self.rpn_mode:
+        elif isinstance(n.value, PostfixOp):
+            # something like '(x,y,z)f'
+            result += "("
+            for i in range(len(n.children) - 1):
+                result += "%s" % self.visit_infix_mode(n.children[i])
+                result += ARG_DELIM
+            result += "%s)" % self.visit_infix_mode(n.children[-1])
             result += str(n.value)
-            result += " "
+
+        else:
+            result += "("
+            for i in range(len(n.children) - 1):
+                result += ("%s %s " % (self.visit_infix_mode(n.children[i]), str(n.value)))
+            result += "%s" % self.visit_infix_mode(n.children[-1])
+            result += ")"
 
         return result
+
+    def visit_postfix_prefix_modes(self, n):
+        result = ''
+
+        if self.mode == Printer.PREFIX_MODE:
+            result += str(n.value) + " "
+
+        for child in n.children:
+            result += self.visit_postfix_prefix_modes(child)
+
+        if self.mode == Printer.POSTFIX_MODE:
+            result += str(n.value) + " "
+
+        return result
+
+    def visit_tree_mode(self, n, depth):
+
+        result = ("  " * depth)
+        result += str(n.value)
+        result += "\n"
+
+        for child in n.children:
+            result += self.visit_tree_mode(child, depth + 1)
+
+        return result       
 
 class Reducer(Visitor):
 

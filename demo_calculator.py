@@ -11,28 +11,30 @@ from glass_cas.parsing import parsing
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
 
-    arg_parser.add_argument("-r", "--replace_constants",
-                        help="replace constants with approximate values",
-                        action="store_true")
     arg_parser.add_argument("-v", "--verbose",
-                        help="verbose mode",
-                        action="store_true")
+        help="verbose mode", 
+        action="store_true")
     arg_parser.add_argument("-t", "--tracebacks",
-                        help="turn on full tracebacks",
-                        action="store_true")
+        help="turn on full tracebacks", 
+        action="store_true")
     arg_parser.add_argument("-d", "--dump_table",
-                        help="print out the symbol table with each command",
-                        action="store_true")
-
+        help="print out the symbol table after each input",
+        action="store_true")
+    arg_parser.add_argument("--tree",
+        help="print a tree representation for each input (in addition to an infix representation)",
+        action="store_true")
     arg_parser.add_argument("--types",
-                        help="show expression types",
-                        action="store_true")
+        help="show expression types",
+        action="store_true")
+    arg_parser.add_argument("--no_replace_constants",
+        help="do not replace constants (e, pi) with approximate values",
+        action="store_true")
 
     ARGS = arg_parser.parse_args()
     parser = parsing.Parser()
     while True:
         uin = input('>> ')
-        if len(uin) > 1 and uin in 'xxxxxx':
+        if len(uin) > 2 and uin in 'qqqqqqqq':
             break
 
         # break apart each step of parsing/evaluation for debug purposes
@@ -48,7 +50,7 @@ if __name__ == '__main__':
                 tree.assign_types()
                 print("Expression has type:", tree.expr_type)
 
-            reduced_tree = tree.reduce(ARGS.replace_constants)
+            reduced_tree = tree.reduce(not ARGS.no_replace_constants)
 
             if ARGS.types:
                 reduced_tree.assign_types()
@@ -57,6 +59,8 @@ if __name__ == '__main__':
             parser.update_symbol_table(reduced_tree)
 
             if not ARGS.verbose:
+                if ARGS.tree:
+                    print(reduced_tree.__str__(mode = 'tree'))
                 print(reduced_tree)
         except (SyntaxError, ZeroDivisionError, ValueError, TypeError) as error:
             if ARGS.tracebacks:
@@ -71,10 +75,14 @@ if __name__ == '__main__':
                 if rpn != None:
                     print("RPN:", rpn)
                 if tree != None:
-                    print("Tree:")
-                    print(tree)
+                    print("Syntax tree:")
+                    if ARGS.tree:
+                        print(tree.__str__(mode = 'tree'))
+                    print(str(tree))
                 if reduced_tree != None:
-                    print("Reduce:")
+                    print("Reduced tree:")
+                    if ARGS.tree:
+                        print(reduced_tree.__str__(mode = 'tree'))
                     print(reduced_tree)
             if ARGS.dump_table:
                 print("Defined Symbols:")
