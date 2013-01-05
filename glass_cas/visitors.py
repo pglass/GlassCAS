@@ -282,13 +282,16 @@ class Expander(Visitor):
                 for i in range(len(result.children)):
                     result.children[i] = self.visit(result.children[i])
         elif isinstance(n.value, NegationOp):
-            
             result = n.copy(recursive = False)
             for child in n.children:
                 result.children.append(self.visit(child))
 
             if Expander.is_plus_or_minus(result.children[0].value):
                 result = self.map(result.value, result.children[0])
+        elif isinstance(n.value, ExponentOp):
+            if isinstance(n.children[1].value, numbers.Number):
+                if Expander.is_plus_or_minus(n.children[0].value):
+                    result = self.expand_sum_to_integer_power(n)
 
         if result != None:
             return result
@@ -298,9 +301,40 @@ class Expander(Visitor):
                 result.children.append(self.visit(child))
             return result
 
+    def expand_sum_to_integer_power(self, n):
+        '''
+        n is a node that represents '(A + B) ^ k' where
+            A and B can be any nodes and k is an integer.
+        
+        Return a node that represents '(A + B) * (A + B) * ... * (A + B)'.
+
+        This does not make new instances of (A+B) each time we need a copy
+            since the result is revisited for expansion.
+        '''
+
+        k = n.children[1].value
+
+        # do we want to return one here if the exponent is zero?
+        # I don't think so. That's more like simplification or reduction.
+        if k <= 0:
+            return n.copy()
+        elif k == 1:
+            return n.children[0]
+
+        result = n.copy(value = TimesOp())
+        current = result
+        for i in range(k-1):
+            current.children.append(n.copy(value = TimesOp()))
+            current.children.append(n.children[0])
+            if i < k-2:
+                current = current.children[0]
+        current.children[0] = n.children[0]
+        
+        return self.visit(result)
+
     def map(self, func, B):
         '''
-        Map A to each child in B.
+        Map func to each child in B.
 
         func is a PrefixOp or PostfixOp.
         B is any node.
@@ -347,3 +381,13 @@ class Expander(Visitor):
             result.children.append(new_term)
 
         return result
+
+class Simplifier(Visitor):
+    '''
+    Simplify some expression:
+        3x^2 + 2x + 4x^2 --> 7x^2 + 2x
+        i
+    '''
+    
+    def visit(self, n):
+       pass 

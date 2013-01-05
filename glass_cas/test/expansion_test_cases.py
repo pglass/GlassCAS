@@ -30,7 +30,7 @@ distribution_plus_cases = [
         "expand((x^2 + 2*x + 1) * (x^3 - 2*x - 3))",
         ("   (((x^2)*(x^3) + (2*x)*(x^3)) + (1)*(x^3))" +
          " - (((x^2)*(2*x) + (2*x)*(2*x)) + (1)*(2*x))" +
-         " - (((x^2)*3     + (2*x)*3    ) + 3)") # we pass it through reduce, so 1*3 becomes 3
+         " - (((x^2)*3     + (2*x)*(3)  ) + (1)*(3))")
     ),
 ]
 
@@ -73,4 +73,25 @@ distribution_negation_cases = [
     ("expand(-((x+y)*(c+d)))", "(-(x*c) + (-(y*c))) + ((-(x*d)) + (-(y*d)))"),
     ("expand(-(x+y)*(c+d))"  , "((-x*c) + (-y*c)) + ((-x*d) + (-y*d))"),
     ("expand(-(1/x * (a+b)))", "(-((1/x)*a)) + (-((1/x)*b))"),
+]
+
+expand_integer_power_cases = [
+    ("expand((x+y)^1)"          , "(x+y)"), 
+    ("expand((x+y)^2)"          , "((x*x) + (y*x)) + ((x*y) + (y*y))"),
+    ("expand((x-y)^2)"          , "((x*x) - (y*x)) - ((x*y) - (y*y))"),
+
+    (
+        "expand((x+y)^3)",
+        # 1. (x+y)*(x+y)*(x+y)
+        # 2. ((x+y)*(x+y)) * x + ((x+y) * (x+y)) * y
+        #
+        # 3. (((x*x) + (y*x)) + ((x*y) + (y*y))) * x
+        #  + (((x*x) + (y*x)) + ((x*y) + (y*y))) * y
+        #
+        # 4. (((x*x) * x + (y*x) * x) + ((x*y) * x + (y*y) * x))
+        #  + (((x*x) * y + (y*x) * y) + ((x*y) * y + (y*y) * y))
+        # 
+        " (((x*x) * x + (y*x) * x) + ((x*y) * x + (y*y) * x))" +
+        " + (((x*x) * y + (y*x) * y) + ((x*y) * y + (y*y) * y))"
+    ),
 ]
