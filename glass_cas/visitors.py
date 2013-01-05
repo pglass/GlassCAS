@@ -175,6 +175,7 @@ class Replacer(Visitor):
 
     def visit(self, n):
         # TODO: this needs to be tested
+        # this is also pretty inefficient
 
         result_node = n.copy(recursive = False)
 
@@ -255,51 +256,65 @@ class Expander(Visitor):
     is_plus_or_minus = lambda c: isinstance(c, PlusOp) or isinstance(c, SubOp)
 
     def visit(self, n):
-        # This works decently... It's slow though.
-        # there's some extra copying in distribute and map.
+        '''
+        This works recursively as follows:
+           1. Expand children first
+           2. Distribute operators over addition/subtraction
+           3. Expand children again if we distributed them
+        It works decently, but it's slow. 
+        For performance, this will reuse instances from the input
+        node instead of make full copies, if possible.
+        
+        A better algorithm might be to first flatten the tree, 
+        then expand as above, then unflatten. This will result in 
+        fewer calls to distribute and map.
+        For example:
+          Current method:
+            Input: x * (((a+b) + c) + d)
+            Distribute: x * ((a+b) + c) + x * d
+            Distribute: (x * (a+b) + x*c) + x * d
+            Distribute: ((x*a + x*b) + x*c) + x * d
+          Flatting method:
+            Input: x * (((a+b) + c) + d))
+            Flatten: x * (a + b + c + d)
+            Distribute: x*a + x*b + x*c + x*d
+            Unflatten: (x*a + x*b) + (x*c + x*d)
+            
+        '''
 
-        result = None
+        result = n.copy(recursive = False)
+        for child in n.children:
+            result.children.append(self.visit(child))
 
         # we assume the tree is binary at all +-*/^ nodes
-        if isinstance(n.value, TimesOp):
-            if Expander.is_plus_or_minus(n.children[0].value):
-                if Expander.is_plus_or_minus(n.children[1].value):
-                    result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
+        if isinstance(result.value, TimesOp):
+            if Expander.is_plus_or_minus(result.children[0].value):
+                if Expander.is_plus_or_minus(result.children[1].value):
+                    result = self.distribute(result.children[0], result.children[1], result.value, left_distr = True)
                 else:
-                    result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
+                    result = self.distribute(result.children[1], result.children[0], result.value, left_distr = False)
+                return self.visit(result)
+            elif Expander.is_plus_or_minus(result.children[1].value):
+                result = self.distribute(result.children[0], result.children[1], result.value, left_distr = True)
+                return self.visit(result)
 
-                for i in range(len(result.children)):
-                    result.children[i] = self.visit(result.children[i])
-            elif Expander.is_plus_or_minus(n.children[1].value):
-                result = self.distribute(n.children[0], n.children[1], n.value, left_distr = True)
-            
-                for i in range(len(result.children)):
-                    result.children[i] = self.visit(result.children[i])
-        elif isinstance(n.value, DivideOp):
-            if Expander.is_plus_or_minus(n.children[0].value):
-                result = self.distribute(n.children[1], n.children[0], n.value, left_distr = False)
-                
-                for i in range(len(result.children)):
-                    result.children[i] = self.visit(result.children[i])
-        elif isinstance(n.value, NegationOp):
-            result = n.copy(recursive = False)
-            for child in n.children:
-                result.children.append(self.visit(child))
+        elif isinstance(result.value, DivideOp):
+            if Expander.is_plus_or_minus(result.children[0].value):
+                result = self.distribute(result.children[1], result.children[0], result.value, left_distr = False)
+                return self.visit(result)
 
+        elif isinstance(result.value, NegationOp):
             if Expander.is_plus_or_minus(result.children[0].value):
                 result = self.map(result.value, result.children[0])
-        elif isinstance(n.value, ExponentOp):
-            if isinstance(n.children[1].value, numbers.Number):
-                if Expander.is_plus_or_minus(n.children[0].value):
-                    result = self.expand_sum_to_integer_power(n)
+                return self.visit(result)
+                
+        elif isinstance(result.value, ExponentOp):
+            if isinstance(result.children[1].value, numbers.Number):
+                if Expander.is_plus_or_minus(result.children[0].value):
+                    result = self.expand_sum_to_integer_power(result)
+                    return self.visit(result)
 
-        if result != None:
-            return result
-        else:
-            result = n.copy(recursive = False)
-            for child in n.children:
-                result.children.append(self.visit(child))
-            return result
+        return result
 
     def expand_sum_to_integer_power(self, n):
         '''
@@ -308,8 +323,7 @@ class Expander(Visitor):
         
         Return a node that represents '(A + B) * (A + B) * ... * (A + B)'.
 
-        This does not make new instances of (A+B) each time we need a copy
-            since the result is revisited for expansion.
+        This does not make new instances of (A+B) each time we need a copy.
         '''
 
         k = n.children[1].value
@@ -317,7 +331,7 @@ class Expander(Visitor):
         # do we want to return one here if the exponent is zero?
         # I don't think so. That's more like simplification or reduction.
         if k <= 0:
-            return n.copy()
+            return n
         elif k == 1:
             return n.children[0]
 
@@ -330,7 +344,7 @@ class Expander(Visitor):
                 current = current.children[0]
         current.children[0] = n.children[0]
         
-        return self.visit(result)
+        return result
 
     def map(self, func, B):
         '''
@@ -348,7 +362,7 @@ class Expander(Visitor):
         
         for child in B.children:
             new_node = B.copy(value = func)
-            new_node.children.append(child.copy())
+            new_node.children.append(child)
             result.children.append(new_node)
 
         return result
@@ -373,11 +387,11 @@ class Expander(Visitor):
         for c in B.children:
             new_term = B.copy(value = operator)
             if left_distr:
-                new_term.children.append(A.copy())
-                new_term.children.append(c.copy())
+                new_term.children.append(A)
+                new_term.children.append(c)
             else:
-                new_term.children.append(c.copy())
-                new_term.children.append(A.copy())
+                new_term.children.append(c)
+                new_term.children.append(A)
             result.children.append(new_term)
 
         return result

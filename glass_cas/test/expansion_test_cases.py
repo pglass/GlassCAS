@@ -27,11 +27,17 @@ distribution_plus_cases = [
     ("expand((a + b) * (1/x))", "a*(1/x) + b*(1/x)"),
 
     (
-        "expand((x^2 + 2*x + 1) * (x^3 - 2*x - 3))",
+        "expand((x^2 + 2*x + 1) * (x^3 + 2*x + 3))",
         ("   (((x^2)*(x^3) + (2*x)*(x^3)) + (1)*(x^3))" +
-         " - (((x^2)*(2*x) + (2*x)*(2*x)) + (1)*(2*x))" +
-         " - (((x^2)*3     + (2*x)*(3)  ) + (1)*(3))")
+         " + (((x^2)*(2*x) + (2*x)*(2*x)) + (1)*(2*x))" +
+         " + (((x^2)*3     + (2*x)*(3)  ) + (1)*(3))")
     ),
+    (
+        "expand((x+y)*(x+y)*(x+y))",
+        " (((x*x) * x + (y*x) * x) + ((x*y) * x + (y*y) * x))" +
+        " + (((x*x) * y + (y*x) * y) + ((x*y) * y + (y*y) * y))"
+    ),
+
 ]
 
 distribution_minus_cases = [(x[0].replace("+", "-"), x[1].replace("+", "-")) for x in distribution_plus_cases]

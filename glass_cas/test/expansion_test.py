@@ -20,7 +20,7 @@ class ExpansionTestCases(unittest.TestCase):
         self.expand_integer_power_cases = exp_cases.expand_integer_power_cases
         
     @staticmethod
-    def get_test_result(case)
+    def get_test_result(case):
         # each case parses to have an ExpandOp as the root
         tree = parsing.Parser().parse(case)
         result = tree.value.apply(*tree.children)
