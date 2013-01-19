@@ -16,7 +16,13 @@ from glass_cas.test.recognition_test import (
 )
 
 from glass_cas.test.expansion_test import (
-    ExpansionTestCases
+    ExpansionTestCases,
+    FlatteningTestCases,
+    UnflatteningTestCases,
+)
+
+from glass_cas.test.simplification_test import (
+    SimplificationTestCases
 )
 
 if __name__ == '__main__':

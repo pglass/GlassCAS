@@ -8,6 +8,8 @@ import sys, argparse, traceback
 
 from glass_cas.parsing import parsing
 
+from glass_cas import visitors
+
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
 
@@ -22,6 +24,9 @@ if __name__ == '__main__':
         action="store_true")
     arg_parser.add_argument("--tree",
         help="print a tree representation for each input (in addition to an infix representation)",
+        action="store_true")
+    arg_parser.add_argument("--normalize",
+        help="show the normalized form of the tree",
         action="store_true")
     arg_parser.add_argument("--types",
         help="show expression types",
@@ -50,13 +55,23 @@ if __name__ == '__main__':
                 tree.assign_types()
                 print("Expression has type:", tree.expr_type)
 
-            reduced_tree = tree.reduce(not ARGS.no_replace_constants)
+            reduced_tree = tree.copy(recursive = True).reduce(not ARGS.no_replace_constants)
 
             if ARGS.types:
                 reduced_tree.assign_types()
                 print("Reduced expression has type:", reduced_tree.expr_type)
 
             parser.update_symbol_table(reduced_tree)
+
+            if ARGS.normalize:
+                norm = tree.copy(recursive = True)
+                if ARGS.types:
+                    norm.assign_types()
+
+                norm = norm.accept(visitors.Normalizer())
+                print("Normalized expression:", norm)
+                if ARGS.types:
+                    print("  Normalized expression has type:", norm.expr_type)
 
             if not ARGS.verbose:
                 if ARGS.tree:

@@ -1,6 +1,6 @@
 Overview
 ========
-This is (going to be) a computer algebra system written in Python.
+This is my unfinished experiment in writing a computer algebra system.
 
 This has been tested under Python 3:
 
@@ -26,10 +26,10 @@ The language is mathematical and built on top of Python's int, float, and comple
     >> 5!
     120
 
-There's a single global symbol table for function definitions. To define functions, use brackets, `[]`, and `:=`. Function calls do not always require parentheses, and whitespace has no effect on the result.
+There's a single global symbol table for function definitions. To define functions, use brackets, `[]`, and `:=`. To call functions, use parentheses. Function calls do not always require parentheses, and whitespace has no effect on the result.
 
-    >> f[x] := 3x + 4
-    (f[x] := ((3 @ x) + 4))
+    >> f[x] := 3*x + 4
+    (f[x] := ((3 * x) + 4))
     >> g[x,y,z] := x + y + z
     (g[x,y,z] := ((x + y) + z))
     >> f(3)
@@ -50,10 +50,17 @@ An `@` is inserted for every implicit multiplication. Additionally, each variabl
     >> wxyz
     (((w @ x) @ y) @ z)
 
-You can expand expressions with `expand`.
+You can expand expressions with `expand`. The output is unsimplifed, so it tends to blow up pretty quickly.
 
     >> expand((a+b)*(c+d))
     (((a * c) + (b * c)) + ((a * d) + (b * d)))
+    >> expand((x+1)^3)
+    (((((x * x) * x) + ((1 * x) * x)) + (((x * 1) * x) + ((1 * 1) * x))) + ((((x * x) * 1) + ((1 * x) * 1)) + (((x * 1) * 1) + ((1 * 1) * 1))))
+
+Use `simplify` to group like terms together. Currently, this works for polynomial addition, subtraction, and multiplication (but not division).
+
+    >> simplify(expand((x+1)^3))
+    (((1 + (3 * x)) + (3 * (x ^ 2))) + (x ^ 3))
 
 Run demo_calculator.py with the `--types` flag to show type recognition:
 
@@ -66,5 +73,4 @@ Run demo_calculator.py with the `--types` flag to show type recognition:
     Expression has type:  PolynomialExpr[Var[x], degree=7]
     Reduced expression has type: PolynomialExpr[Var[x], degree=7]
     ...
-
 

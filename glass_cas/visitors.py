@@ -19,6 +19,7 @@ class Printer(Visitor):
     INFIX_MODE   = "infix"
     POSTFIX_MODE = "postfix"
     TREE_MODE    = "tree" 
+    BFS_MODE     = "breadth_first"
 
     def __init__(self, mode = TREE_MODE):
         '''
@@ -36,7 +37,10 @@ class Printer(Visitor):
                       +
                         y
                         2
-            Each mode can be identified, resepctively, by the strings:
+            BFS_MODE - produces a string with each node's value ordered
+                according to a breadth first traversal of the tree.
+                For "(x - 2) * (y / 3)" this will return: '*-/x2y3'
+            Each mode can be identified, respectively, by the strings:
                 "prefix", "infix", "postfix", "tree"
         '''
 
@@ -53,6 +57,8 @@ class Printer(Visitor):
             return self.visit_tree_mode(n, 0)[:-1] # strip off trailing newline
         elif self.mode == Printer.INFIX_MODE:
             return self.visit_infix_mode(n)
+        elif self.mode == Printer.BFS_MODE:
+            return self.visit_breadth_first_mode(n)
         else:
             return self.visit_postfix_prefix_modes(n)[:-1] # strip off trailing space
 
@@ -113,6 +119,19 @@ class Printer(Visitor):
 
         return result       
 
+    def visit_breadth_first_mode(self, n):
+        frontier = [n]
+        result = ''
+
+        while frontier:
+            current = frontier.pop(0)
+            result += str(current.value)
+ 
+            for child in current.children:
+                frontier.append(child)
+        
+        return result
+
 class Reducer(Visitor):
 
     def __init__(self, replace_constants = False):
@@ -123,7 +142,7 @@ class Reducer(Visitor):
         Computes the value of the tree at node n.
 
         replace_constants = True will replace constant identifiers
-        with their numeric values, e.g., 'e' becomes 2.7182818...
+            with their numeric values, e.g., 'e' becomes 2.7182818...
         replace_constants = False will leave 'e' in the tree.
         '''
         
@@ -131,7 +150,7 @@ class Reducer(Visitor):
         for child in n.children:
             result_node.children.append(self.visit(child))
 
-        # replace a Constant object with an explicit number (int/float/complex)
+        # replace a Constant object (e, pi) with its numerical value (a float) 
         if self.replace_constants and isinstance(n.value, Constant):
             result_node.value = n.value.value
 
@@ -143,21 +162,21 @@ class Reducer(Visitor):
             return result_node
 
         elif isinstance(result_node.value, UserFunction):
-            # UserFunction.apply returns a *node*, even if it evaluates to a number
+            # UserFunction.apply returns a *node*
             reduced_node = result_node.value.apply(*[x.value for x in result_node.children])
             if reduced_node != None:
                 result_node = reduced_node
 
-        elif isinstance(result_node.value, ExpandOp):
+        elif isinstance(result_node.value, ExpandOp) or isinstance(result_node.value, SimplifyOp):
             return result_node.value.apply(*result_node.children)
+
         elif isinstance(result_node.value, GeneralOperator):
-            # We can reduce this tree if all children were reduced to a number.
+            # We can reduce the given node to a number if all children were reduced to a number.
             if all(isinstance(x.value, numbers.Number) for x in result_node.children):
                 reduced_value = result_node.value.apply(*[x.value for x in result_node.children])
                 if reduced_value != None:
                     result_node.value = reduced_value
                     result_node.children.clear()
-
 
         return result_node
 
@@ -239,6 +258,17 @@ class Recognizer(object):
             left = self.visit(n.children[0])
             right = self.visit(n.children[1])
             result = left.resolve(n.value, right)
+            
+        elif isinstance(n.value, NegationOp):
+            child_type = self.visit(n.children[0])
+            if isinstance(child_type, ConstantExpr):
+                result = ConstantExpr(-child_type.value)
+            else:
+                # not positive this holds in all cases
+                result = child_type
+#            elif isinstance(child_type, PolynomialExpr):
+#                result = child_type
+
         elif isinstance(n.value, numbers.Number):
             result = ConstantExpr(n.value)
         elif isinstance(n.value, Constant):
@@ -267,7 +297,8 @@ class Expander(Visitor):
         
         A better algorithm might be to first flatten the tree, 
         then expand as above, then unflatten. This will result in 
-        fewer calls to distribute and map.
+        fewer calls to distribute and map, however the entire tree
+        is traversed twice for the flattening and unflattening.
         For example:
           Current method:
             Input: x * (((a+b) + c) + d)
@@ -396,12 +427,428 @@ class Expander(Visitor):
 
         return result
 
-class Simplifier(Visitor):
-    '''
-    Simplify some expression:
-        3x^2 + 2x + 4x^2 --> 7x^2 + 2x
-        i
-    '''
+class Flattener(Visitor):
+    def visit(self, n):
+        '''
+        Compress sequences of additions and multiplications to be
+        a single root node with many children, rather than binary
+        in all cases.
+        Example:
+            3 + 4 + 5 + 6 normally parses to:
+                +
+                  +
+                    +
+                      3
+                      4
+                    5
+                  6
+            After flattening this becomes:
+                +
+                  3
+                  4
+                  5
+                  6
+        NOTES:
+        When updating this method, you should also update Unflattener.visit.
+
+        This should maintain expr_type attributes correctly. Recognizer is
+        not made for use with a flattened tree, so you have to first call assign_types()
+        and then flatten the tree to have expression types in the output.
+
+        This only works for + and * because they're the only commutative operators.
+        We can also do some flattening for - and / but we'd first have to
+        apply some transformations:
+            3-4-5 --> 3 + (-4) + (-5)
+            3-(4-5) --> 3 + (-4) + 5
+            3/4/5 --> 3 * (1/4) * (1/5), or 3 * (4^-1) * (5^-1)
+            3/(4/5) --> 3 * (1/(4/5)), or 3 * (5/4), or 3 * (1/4) * 5
+        I feel like this is beyond the scope of the Flattener though.
+        '''
+
+        result = n.copy(recursive = False)
+        result.expr_type = n.expr_type
+        for child in n.children:
+            result.children.append(self.visit(child))
+
+        if isinstance(result.value, InfixOp) and result.value.commutative:
+            for i, child in enumerate(result.children):
+                if type(child.value) == type(result.value):
+                    result.children[i:i+1] = child.children
+
+        return result
+
+class Unflattener(Visitor):
+    DEFAULT_MODE  = "default"
+    BALANCED_MODE = "balanced"
+    def __init__(self, mode = DEFAULT_MODE):
+        '''
+        This undoes the flattening done by Flattener. Since we can't
+        know the structure of the original tree, we can choose the 
+        structure of the output tree. The resultant tree will binary 
+        at all nodes containing a commutative operator.
+
+        Default mode treats commutative operators as left associative.
+            Ex: (3+4+5+6) --> ((3+4) + 5) + 6)
+        Balanced mode tries to produces a balanced tree, favoring the
+            left side when there is an imbalance.
+                Ex: (3+4+5+6) --> (3+4) + (5+6)
+                Ex: (3+4+5+6+7) --> ((3+4) + 5) + (6+7)
+            This can be useful if we want to limit the stack depth of
+            subsequent operations, but only if there was significant 
+            flattening done to the input tree.
+        '''
+        self.mode = mode
+
+    def visit(self, n):
+        # TODO? respect operator associativity
+        if self.mode == Unflattener.DEFAULT_MODE: 
+            result = n.copy(recursive = False)
+            if isinstance(n.value, InfixOp) and n.value.commutative:
+                if len(n.children) > 2:
+                    new_node = n.copy(recursive = False)
+                    new_node.children = n.children[:-1]
+                    result.children.append(self.visit(new_node))
+                    result.children.append(self.visit(n.children[-1]))
+                else:
+                    result.children.append(self.visit(n.children[0]))
+                    result.children.append(self.visit(n.children[1]))
+            else:
+                for child in n.children:
+                    result.children.append(self.visit(child))
+            return result
+
+        elif self.mode == Unflattener.BALANCED_MODE:
+            result = n.copy(recursive = False)
+            if isinstance(n.value, InfixOp) and n.value.commutative:
+                if len(n.children) == 1:
+                    return self.visit(n.children[0])
+                elif len(n.children) > 2:
+                    split = int(len(n.children)/2 + .5)
+                    new_node = n.copy(recursive = False)
+                    new_node.children = n.children[:split] 
+                    result.children.append(self.visit(new_node))
+    
+                    new_node = n.copy(recursive = False)
+                    new_node.children = n.children[split:] 
+                    result.children.append(self.visit(new_node))
+                else:
+                    result.children.append(self.visit(n.children[0]))
+                    result.children.append(self.visit(n.children[1]))
+            else:
+                for child in n.children:
+                    result.children.append(self.visit(child))
+            return result
+
+class Sorter(Visitor):
+    
+    BY_NODE_VALUE = "by_node_value"
+    BY_SUBTREE_REPR = "by_subtree_repr" 
+    BY_EXPR_TYPE = "by_expr_type" 
+
+    def __init__(self, mode = BY_NODE_VALUE):
+        '''
+        This will sort each node's list of children according
+            to the given mode. This will produce an equivalent tree,
+            so it will only sort children where the operation being
+            applied is commutative.
+
+        BY_NODE_VALUE will sort according to str(node.value).
+        BY_SUBTREE_REPR will sort children according to the string 
+            of the prefix representation of the subtree rooted 
+            by each child node.
+        BY_EXPR_TYPE will sort first by the type of expression:
+                  UnknownExpr
+                > ExponentialExpr
+                > RationalExpr
+                > PolynomialExpr
+                > ConstantExpr
+            Then it will also sort among members of the same type
+                using certain attributes. For PolynomialExprs, it will 
+                use the variable name and the degree. For ConstantExprs
+                it uses a string representation of the constant value.
+            Then it sorts by subtree representation. For example:
+                x^2 + x + 1 --> 1 + x + x^2
+
+        This is a useful hack for grouping similar-looking terms in 
+            a flattened tree.
+        '''
+        self.mode = mode
+
+    @staticmethod
+    def by_node_value_key(n):
+        return str(n.value)
+
+    @staticmethod
+    def by_subtree_repr_key(n):
+        return n.accept(Printer(mode = Printer.BFS_MODE))
+
+    @staticmethod
+    def get_expr_sort_val(expr_type):
+        if isinstance(expr_type, ExponentialExpr):
+            return "05"
+        elif isinstance(expr_type, RationalExpr):
+            return "04"
+        elif isinstance(expr_type, PolynomialExpr):
+            return "03" + str(expr_type.var) + str(expr_type.degree)
+        elif isinstance(expr_type, ConstantExpr):
+            return "02" + str(expr_type.value)
+        else:
+            return "01"
+
+    @staticmethod
+    def by_expr_type_key(n):
+        return Sorter.get_expr_sort_val(n.expr_type) + Sorter.by_subtree_repr_key(n)
+
+    def visit(self, n):
+        result = n.copy(recursive = True)
+        if self.mode == Sorter.BY_NODE_VALUE:
+            self.sort_visit(result, Sorter.by_node_value_key)
+        elif self.mode == Sorter.BY_SUBTREE_REPR:
+            self.sort_visit(result, Sorter.by_subtree_repr_key)
+        elif self.mode == Sorter.BY_EXPR_TYPE:
+            self.sort_visit(result, Sorter.by_expr_type_key)
+        return result
+
+    def sort_visit(self, n, sort_key):
+        for child in n.children:
+            self.sort_visit(child, sort_key)
+
+        if isinstance(n.value, InfixOp) and n.value.commutative:
+            n.children.sort(key = sort_key)
+
+class Normalizer(Visitor):
     
     def visit(self, n):
-       pass 
+        '''
+        n is a node.
+
+        This does the following transformations
+            1. (a - b) --> a + (-1 * b)
+            2. (a / b) --> (1/b) * a
+            3. `x --> (-1 * x)
+        
+        Then it flattens the tree.
+        Then it sorts the tree according to Sorter.BY_EXPR_TYPE.
+        '''
+
+        result = self.norm_visit(n)
+
+        result.assign_types()
+
+        result = result.accept(Flattener())
+        result = result.accept(Sorter(mode = Sorter.BY_EXPR_TYPE))
+        return result
+
+    def norm_visit(self, n): 
+        for i in range(len(n.children)):
+            n.children[i] = self.norm_visit(n.children[i])
+
+        result = n
+        if isinstance(n.value, SubOp):
+            # a - b --> a + (-1 * b)
+            new_right = n.construct(n.copy(value = -1), TimesOp(), n.children[1])
+            result = n.construct(n.children[0], PlusOp(), new_right)
+        elif isinstance(n.value, DivideOp):
+            # a/b --> (1/b) * a
+            new_left = n.construct(n.copy(value = 1), DivideOp(), n.children[1])
+            result = n.construct(new_left, TimesOp(), n.children[0])
+        elif isinstance(n.value, NegationOp):
+            # `x --> -1 * x
+            result = n.construct(n.copy(value = -1), TimesOp(), n.children[0])
+
+        return result
+
+class Denormalizer(Visitor):
+    
+    def visit(self, n):
+        '''
+        n is a node.
+        
+        This tries to undo the transformations performed by Normalizer. 
+        Namely:
+            1. a + (-1 * b) --> a - b
+            2. (1/b) * a --> a / b
+            3. -1 * x --> `x
+        It als unflattens the tree.
+
+        '''
+        result = self.denorm_visit(n)
+        result = result.accept(Unflattener())
+        return result
+
+    def denorm_visit(self, n):
+        result = n
+        if isinstance(n.value, PlusOp) and isinstance(n.children[1].value, TimesOp) and n.children[1].children[0].value == -1:
+            # a + (-1 * b) --> a - b
+            result = n.construct(n.children[0], SubOp(), n.children[1].children[1])
+        elif isinstance(n.value, TimesOp) and isinstance(n.children[0].value, DivideOp) and n.children[0].children[0].value == 1:
+            # (1/b) * a --> a / b
+            result = n.construct(n.children[1], DivideOp, n.children[0].children[1])
+        elif isinstance(n.value, TimesOp) and n.children[0].value == -1:
+            # -1 * x --> `x
+            result = n.construct(n.children[1], NegationOp())
+
+        for i in range(len(result.children)):
+            result.children[i] = self.denorm_visit(result.children[i])
+
+        return result
+
+class Simplifier(Visitor):
+   
+    def visit(self, n):
+        result = n.accept(Normalizer())
+        result = self.simplify_visit(result)
+        # we don't need to denormalize here. It's more of a display nicety.
+        result = result.accept(Denormalizer())
+        return result
+
+    def simplify_visit(self, n):
+        result = n
+
+        # so this approach is limited. 
+        # What if, for example, a RationalExpr simplifies to a PolynomialExpr or ConstantExpr?
+        #   x / x --> 1
+        #   x^2 / x --> x
+        if isinstance(result.expr_type, ConstantExpr):
+            result = n.copy(value = result.expr_type.value)
+            result.expr_type = n.expr_type
+            return result
+        elif isinstance(result.expr_type, PolynomialExpr):
+            result.children = [self.simplify_visit(x) for x in result.children]
+            result = self.simplify_to_polynomial(result)
+            result.expr_type = n.expr_type
+            return result
+        else:
+            return n
+
+
+    def resolve_poly_add(self, a, b):
+        '''
+        Called from simplify to polynomial.
+
+        Note:
+        a and b will not be a sum of terms. That is, if a.expr_type
+        is a PolynomialExpr with degree d, then a represents (A ^ d)
+        and not (A^d + <term> + <term> + ...). The only issue here is 
+        that A could still be (1+x), for example. That is, the input 
+        is not necessarily fully expanded.
+        '''
+        
+        if type(a.expr_type) != type(b.expr_type):
+            return None
+
+        result = None
+        result_type = a.expr_type.resolve(PlusOp(), b.expr_type)
+
+        if isinstance(result_type, UnknownExpr):
+            return None
+
+        if isinstance(result_type, ConstantExpr):
+            result = a.copy(value = result_type.value)
+        elif isinstance(result_type, PolynomialExpr):
+            # if a, b are of same variable and degree
+            if a.expr_type == b.expr_type:
+                if isinstance(a.value, Var) and isinstance(b.value, Var):
+                    # x + x --> 2 * x
+                    result = a.construct(a.copy(value = 2), TimesOp(), a)
+                elif isinstance(a.value, ExponentOp) and isinstance(b.value, ExponentOp):
+                    # _^d + _^d --> 2 * (_^d)
+                    #
+                    # so there are other cases that hit this conditional, like:
+                    #   (1+x)^2 + x^2 --> 1 + 2x + x^2 + x^2 --> 1 + 2x + 2x^2
+                    # But this requires an expansion, and I'd rather not expand here.
+                    if a.strict_match(b):
+                        result = a.construct(a.copy(value = 2), TimesOp(), a)
+                elif isinstance(a.value, TimesOp):
+                    if (isinstance(b.value, TimesOp) 
+                        and isinstance(a.children[0].value, numbers.Number)
+                        and isinstance(b.children[0].value, numbers.Number)
+                        and a.children[1].strict_match(b.children[1])
+                        ):
+                        # (3 * _) + (2 * _) --> 5 * _
+                        new_coeff = a.children[0].value + b.children[0].value
+                        result = a.construct(a.copy(value = new_coeff), TimesOp(), a.children[1])
+                    elif isinstance(a.children[0].value, numbers.Number) and a.children[1].strict_match(b):
+                        # (3 * _) + _ --> 4 * _
+                        new_coeff = a.children[0].value + 1
+                        if new_coeff == 0:
+                            result = a.copy(value = 0)
+                            result_type = ConstantExpr(0)
+                        else:
+                            result = a.construct(a.copy(value = new_coeff), TimesOp(), b)
+        if result != None:
+            result.expr_type = result_type
+        return result 
+
+    def resolve_poly_mult(self, a, b):
+        result = None
+        result_type = a.expr_type.resolve(TimesOp(), b.expr_type)
+
+        if isinstance(result_type, UnknownExpr):
+            return None 
+        
+        if isinstance(result_type, ConstantExpr):
+            result = a.copy(value = result_type.value)
+        elif isinstance(a.expr_type, ConstantExpr):
+            if a.expr_type.value == 0:
+                # 0 * _ --> 0
+                result = a.copy(value = 0)
+                result_type = ConstantExpr(0)
+            elif isinstance(b.value, TimesOp) and isinstance(b.children[0].value, numbers.Number):
+                # a * (b * x) --> (a*b) * x
+                new_coeff = TimesOp().apply(a.value, b.children[0].value)
+                if new_coeff == 0:
+                    result = a.copy(value = 0)
+                    result_type = ConstantExpr(0)
+                else:
+                    result = a.construct(a.copy(value = new_coefficient), TimesOp(), b.children[1])
+        elif isinstance(result_type, PolynomialExpr):
+            if isinstance(a.value, Var) and isinstance(b.value, Var):
+                # x * x --> x^2
+                result = a.construct(a, ExponentOp(), a.copy(value = 2))
+            elif isinstance(a.value, ExponentOp) and isinstance(b.value, Var):
+                # _^c * _ --> _^(c + 1)
+                new_exponent = a.children[1].value + 1
+                result = a.construct(b, ExponentOp(), a.copy(value = new_exponent))
+            elif isinstance(a.value, ExponentOp) and isinstance(b.value, ExponentOp):
+                # _^c * _^d --> _^(c+d)
+                if a.children[0].strict_match(b.children[0]):
+                    new_exponent = a.children[1].value + b.children[1].value
+                    result = a.construct(a.children[0], ExponentOp(), a.copy(value = new_exponent))
+
+        if result != None:
+            result.expr_type = result_type
+        return result 
+ 
+    def simplify_to_polynomial(self, n):
+
+        result = n.copy(recursive = False)
+
+        if isinstance(n.value, PlusOp) or isinstance(n.value, TimesOp):
+            # handle <poly> + ... + <poly> or <poly> * ... * <poly>
+            # keep in mind n is already flattened and sorted            
+
+            result.children.append(n.children.pop(0))
+            while len(n.children) > 0:
+                
+                a = result.children[-1]
+                b = n.children.pop(0)
+                
+                new_node = None
+                if isinstance(n.value, PlusOp):
+                    new_node = self.resolve_poly_add(a, b)
+                elif isinstance(n.value, TimesOp):
+                    new_node = self.resolve_poly_mult(a, b)
+
+                if new_node != None:
+                    result.children[-1] = new_node
+                else:
+                    result.children.append(b)
+        else:
+            result = n.copy(recursive = True)
+
+        if len(result.children) == 1:
+            return result.children[0]
+
+        return result
+

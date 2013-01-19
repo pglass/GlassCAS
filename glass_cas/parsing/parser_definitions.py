@@ -52,10 +52,12 @@ RIGHT = 1
 class GeneralOperator(object):
     ''' Base class and interface for all operator objects '''
 
-    def __init__(self, name=None, precedence=None, associativity=None, num_operands=None):
+    def __init__(self, name=None, precedence=None, commutative=False, 
+                 associativity=None, num_operands=None):
         self.name = name
         self.precedence = precedence
         self.associativity = associativity
+        self.commutative = commutative
         self.num_operands = num_operands
 
     def __str__(self):
@@ -87,12 +89,18 @@ class GeneralOperator(object):
 # INFIX FUNCTIONS/OPERATORS
 ########################################
 class InfixOp(GeneralOperator):
-    def __init__(self, name=None, precedence=None, associativity=None):
-        super().__init__(name=name, precedence=precedence, associativity=associativity, num_operands=2)
+    def __init__(self, name=None, precedence=None, commutative=False, associativity=None):
+        super().__init__(
+            name=name, 
+            precedence=precedence, 
+            commutative=commutative, 
+            associativity=associativity, 
+            num_operands=2
+        )
 
 class PlusOp(InfixOp):
     def __init__(self):
-        super().__init__('+', precedence=1, associativity=LEFT)
+        super().__init__('+', precedence=1, commutative=True, associativity=LEFT)
 
     def apply(self, *operands):
         self.check_operands(*operands)
@@ -108,7 +116,7 @@ class SubOp(InfixOp):
 
 class TimesOp(InfixOp):
     def __init__(self):
-        super().__init__('*', precedence=2, associativity=LEFT)
+        super().__init__('*', precedence=2, commutative=True, associativity=LEFT)
 
     def apply(self, *operands):
         self.check_operands(*operands)
@@ -119,13 +127,12 @@ class TimesOp(InfixOp):
 
 class ImplicitMultOp(TimesOp):
     '''
-    This is a subclass of TimesOp, since we usually treat this the same.
+    ImplicitMultOp extends TimesOp, since we usually treat it the same.
     '''
     def __init__(self):
         super().__init__()
         self.name = IMPLICIT_MULT
         self.precedence = 3.5
-        # super().__init__(IMPLICIT_MULT, precedence=3.5, associativity=LEFT)
 
     def apply(self, *operands):
         self.check_operands(*operands)
@@ -169,7 +176,7 @@ class ExponentOp(InfixOp):
 
 class EqualsOp(InfixOp):
     def __init__(self):
-        super().__init__('=', precedence=0, associativity=LEFT)
+        super().__init__('=', precedence=0, commutative=True, associativity=LEFT)
 
     def apply(self, *operands):
         raise NotImplementedError(
@@ -192,10 +199,10 @@ class PostfixOp(GeneralOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+# a couple of classes for testing
 class PrecZeroPostfixOp(PostfixOp):
     def __init__(self):
         super().__init__(name='Post(0)', precedence=0, associativity=LEFT, num_operands=1)
-
 class PrecThreePostfixOp(PostfixOp):
     def __init__(self):
         super().__init__(name='Post(3)', precedence=3, associativity=LEFT, num_operands=1)
@@ -215,10 +222,10 @@ class PrefixOp(GeneralOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+# a couple of classes for testing
 class PrecZeroPrefixOp(PrefixOp):
     def __init__(self):
         super().__init__("Prefix(0)", precedence=0, associativity=RIGHT, num_operands=1)
-
 class PrecFivePrefixOp(PrefixOp):
     def __init__(self):
         super().__init__("Prefix(5)", precedence=5, associativity=RIGHT, num_operands=1)
@@ -297,6 +304,18 @@ class ExpandOp(PrefixOp):
         result = Expander().visit(operands[0])
         return result
 
+class SimplifyOp(PrefixOp):
+    def __init__(self):
+        super().__init__('simplify', precedence=1, associativity=RIGHT, num_operands=1)
+
+    def apply(self, *operands):
+        # TODO: I don't like this import here (same as with expand)
+        from ..visitors import Simplifier
+
+        self.check_operands(*operands)
+        result = Simplifier().visit(operands[0])
+        return result
+
 ########################################
 # USER-DEFINED FUNCTION/OPERATOR
 ########################################
@@ -355,7 +374,7 @@ class UserFunction(PrefixOp):
                 return result.reduce()
             else:
                 # cannot return the same instance of this function's body
-                return self.value.copy()
+                return self.value.copy(recursive = True)
         return None
 
 ########################################
@@ -419,4 +438,5 @@ OP_CLASS_DICT = {
     'ln'    : LogEOp,
     'log'   : LogTenOp,
     'expand': ExpandOp,
+    'simplify' : SimplifyOp,
 }

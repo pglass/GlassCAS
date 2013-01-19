@@ -16,6 +16,8 @@ constant_expr_on_left_cases = [
   ("2 / 3"      , ConstantExpr(2.0/3)                 ),
   ("2 ^ 3"      , ConstantExpr(8)                     ),
 
+  ("-2"         , ConstantExpr(-2)                    ),
+
   ("3 + x"      , PolynomialExpr(Var("x"), degree=1)  ),
   ("3 - x"      , PolynomialExpr(Var("x"), degree=1)  ),
   ("3 * x"      , PolynomialExpr(Var("x"), degree=1)  ),
@@ -45,11 +47,18 @@ constant_expr_on_left_cases = [
 # what should this be?
   ("2 ^ 3^x"    , UnknownExpr()                       ),
 
-  ("(2 - 5) + 3" , ConstantExpr(0)                     ),
-  ("(2 - 5) - 3" , ConstantExpr(-6)                    ),
-  ("(2 - 5) * 3" , ConstantExpr(-9)                    ),
-  ("(2 - 5) / 3" , ConstantExpr(-1)                    ),
-  ("(2 - 5) ^ 3" , ConstantExpr(-27)                   ),
+  ("(2 - 5) + 3" , ConstantExpr(0)                    ),
+  ("(2 - 5) - 3" , ConstantExpr(-6)                   ),
+  ("(2 - 5) * 3" , ConstantExpr(-9)                   ),
+  ("(2 - 5) / 3" , ConstantExpr(-1)                   ),
+  ("(2 - 5) ^ 3" , ConstantExpr(-27)                  ),
+  
+  ("(-6) + 3" , ConstantExpr(-3)                      ),
+  ("(-6) - 3" , ConstantExpr(-9)                      ),
+  ("(-6) * 3" , ConstantExpr(-18)                     ),
+  ("(-6) / 3" , ConstantExpr(-2)                      ),
+  ("(-6) ^ 3" , ConstantExpr(-216)                    ),
+
 ]
 
 # for PolynomialExpr.resolve
@@ -60,6 +69,13 @@ polynomial_expr_on_left_cases = [
   ("x / 4"       , PolynomialExpr(Var("x"), degree=1)  ),
 
   ("x ^ 4"       , PolynomialExpr(Var("x"), degree=4)  ),
+
+  ("-x"          , PolynomialExpr(Var("x"), degree=1)  ),
+  ("-(x + 4)"    , PolynomialExpr(Var("x"), degree=1)  ),
+  ("-(x - 4)"    , PolynomialExpr(Var("x"), degree=1)  ),
+  ("-(x * 4)"    , PolynomialExpr(Var("x"), degree=1)  ),
+  ("-(x / 4)"    , PolynomialExpr(Var("x"), degree=1)  ),
+  ("-(x ^ 4)"    , PolynomialExpr(Var("x"), degree=4)  ),
 
   ("x^5 + 2"     , PolynomialExpr(Var("x"), degree=5)  ),
   ("x^5 - 2"     , PolynomialExpr(Var("x"), degree=5)  ),
@@ -96,6 +112,13 @@ polynomial_expr_on_left_cases = [
 rational_expr_on_left_cases = [
   (
     "(1/x)",
+    RationalExpr(
+      ConstantExpr(1, var = Var("x")), # ConstantExpr subclasses PolynomialExpr
+      PolynomialExpr(Var("x"), degree=1)
+    )
+  ),
+  (
+    "-(1/x)",
     RationalExpr(
       ConstantExpr(1, var = Var("x")), # ConstantExpr subclasses PolynomialExpr
       PolynomialExpr(Var("x"), degree=1)
