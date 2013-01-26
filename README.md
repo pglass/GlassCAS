@@ -50,12 +50,12 @@ An `@` is inserted for every implicit multiplication. Additionally, each variabl
     >> wxyz
     (((w @ x) @ y) @ z)
 
-You can expand expressions with `expand`. The output is unsimplifed, so it tends to blow up pretty quickly.
+You can expand expressions with `expand`.
 
     >> expand((a+b)*(c+d))
     (((a * c) + (b * c)) + ((a * d) + (b * d)))
     >> expand((x+1)^3)
-    (((((x * x) * x) + ((1 * x) * x)) + (((x * 1) * x) + ((1 * 1) * x))) + ((((x * x) * 1) + ((1 * x) * 1)) + (((x * 1) * 1) + ((1 * 1) * 1))))
+    ((((x ^ 3) + ((3 * (x ^ 2)) * 1)) + ((3 * x) * (1 ^ 2))) + (1 ^ 3))
 
 Use `simplify` to group like terms together. Currently, this works for polynomial addition, subtraction, and multiplication (but not division).
 
