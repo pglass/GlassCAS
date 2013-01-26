@@ -1,6 +1,7 @@
 from .parsing.parser_definitions import *
 from .expression_types import *
 import numbers
+from math import factorial
 
 class Visitor(object):
     ''' Defines the Visitor interface '''
@@ -340,7 +341,7 @@ class Expander(Visitor):
                 return self.visit(result)
                 
         elif isinstance(result.value, ExponentOp):
-            if isinstance(result.children[1].value, numbers.Number):
+            if isinstance(result.children[1].value, int) and result.children[1].value >= 0:
                 if Expander.is_plus_or_minus(result.children[0].value):
                     result = self.expand_sum_to_integer_power(result)
                     return self.visit(result)
@@ -352,31 +353,53 @@ class Expander(Visitor):
         n is a node that represents '(A + B) ^ k' where
             A and B can be any nodes and k is an integer.
         
-        Return a node that represents '(A + B) * (A + B) * ... * (A + B)'.
+        Use the binomial theorem to produce a node that represents
+            Sum[(k choose i) * A^i * B^(k-i), i in range(0, k+1)]
 
         This does not make new instances of (A+B) each time we need a copy.
         '''
-
-        k = n.children[1].value
-
-        # do we want to return one here if the exponent is zero?
-        # I don't think so. That's more like simplification or reduction.
-        if k <= 0:
-            return n
-        elif k == 1:
-            return n.children[0]
-
-        result = n.copy(value = TimesOp())
-        current = result
-        for i in range(k-1):
-            current.children.append(n.copy(value = TimesOp()))
-            current.children.append(n.children[0])
-            if i < k-2:
-                current = current.children[0]
-        current.children[0] = n.children[0]
         
-        return result
+        k = n.children[1].value
+        if k == 0:
+            return n.copy(value = 1)
 
+        A, B = n.children[0].children
+
+        choose = lambda n, r: int(factorial(n)/(factorial(r) * factorial(n-r)))
+
+        coeffs = [choose(k, i) for i in range(0, k+1)]
+
+        result = n.copy(value = PlusOp())
+
+        for i, c in enumerate(coeffs):
+            # term represents (c * A^i * B^(k-i))
+            term = n.copy(value = TimesOp())
+            
+            if isinstance(n.children[0].value, SubOp) and i % 2 == 1:
+                # account for sign
+                term.children.append(n.construct(n.copy(value = c), NegationOp()))
+            elif c != 1:
+                term.children.append(n.copy(value = c))
+                
+            if k-i == 1:
+                # use 'x' instead of 'x^1'
+                term.children.append(A)
+            elif k-i != 0:
+                # don't put anything for 'x^0'
+                term.children.append(n.construct(A, ExponentOp(), n.copy(value = k-i)))
+
+            if i == 1:
+                term.children.append(B)
+            elif i != 0:
+                term.children.append(n.construct(B, ExponentOp(), n.copy(value = i)))
+            
+            if len(term.children) == 1:
+                result.children.append(term.children[0])
+            else:
+                result.children.append(term)
+
+        return result.accept(Unflattener())
+    
     def map(self, func, B):
         '''
         Map func to each child in B.

@@ -46,11 +46,11 @@ distribution_implicit_mult_cases = [(x[0].replace("*", ""), x[1].replace("*", ""
 distribution_division_cases = [
     ("expand((a+b)/x)"          , "(a/x) + (b/x)"),
     ("expand((a+b)/(x+y))"      , "a/(x+y) + b/(x+y)"),
-    ("expand((a+b+c+d)/(x+y))"   , "a/(x+y) + b/(x+y) + c/(x+y) + d/(x+y)"),
+    ("expand((a+b+c+d)/(x+y))"  , "a/(x+y) + b/(x+y) + c/(x+y) + d/(x+y)"),
 
     ("expand((a-b)/x)"          , "(a/x) - (b/x)"),
     ("expand((a-b)/(x-y))"      , "a/(x-y) - b/(x-y)"),
-    ("expand((a-b-c-d)/(x-y))"   , "a/(x-y) - b/(x-y) - c/(x-y) - d/(x-y)"),
+    ("expand((a-b-c-d)/(x-y))"  , "a/(x-y) - b/(x-y) - c/(x-y) - d/(x-y)"),
 ]
 
 distribution_division_and_multiplication_cases = [
@@ -81,24 +81,31 @@ distribution_negation_cases = [
 ]
 
 expand_integer_power_cases = [
-    ("expand((x+y)^1)"          , "(x+y)"), 
-    ("expand((x+y)^2)"          , "((x*x) + (y*x)) + ((x*y) + (y*y))"),
-    ("expand((x-y)^2)"          , "((x*x) - (y*x)) - ((x*y) - (y*y))"),
-
+    ("expand((x+y)^0)"          , "1"),
+    ("expand((x+y)^1)"          , "x+y"),
+    ("expand((x+y)^2)"          , "x^2 + 2*x*y + y^2"),
+    ("expand((x-y)^2)"          , "x^2 + (-2)*x*y + y^2"),
+    ("expand((x+y)^3)"          , "x^3 + 3*x^2*y + 3*x*y^2 + y^3"),
+    ("expand((x-y)^3)"          , "x^3 + (-3)*x^2*y + 3*x*y^2 + (-1)*y^3"),
     (
-        "expand((x+y)^3)",
-        # 1. (x+y)*(x+y)*(x+y)
-        # 2. ((x+y)*(x+y)) * x + ((x+y) * (x+y)) * y
-        #
-        # 3. (((x*x) + (y*x)) + ((x*y) + (y*y))) * x
-        #  + (((x*x) + (y*x)) + ((x*y) + (y*y))) * y
-        #
-        # 4. (((x*x) * x + (y*x) * x) + ((x*y) * x + (y*y) * x))
-        #  + (((x*x) * y + (y*x) * y) + ((x*y) * y + (y*y) * y))
-        # 
-        " (((x*x) * x + (y*x) * x) + ((x*y) * x + (y*y) * x))" +
-        " + (((x*x) * y + (y*x) * y) + ((x*y) * y + (y*y) * y))"
+        "expand((x+y)^10)",
+        ("x^10 + 10*x^9*y + 45*x^8*y^2 + 120*x^7*y^3 + 210*x^6*y^4 + 252*x^5*y^5"
+         "+ 210*x^4*y^6 + 120*x^3*y^7 +45*x^2*y^8 + 10*x*y^9 + y^10")
     ),
+    (
+        "expand((x-y)^10)",
+        ("x^10 + (-10)*x^9*y + 45*x^8*y^2 + (-120)*x^7*y^3 + 210*x^6*y^4 + (-252)*x^5*y^5"
+         "+ 210*x^4*y^6 + (-120)*x^3*y^7 + 45*x^2*y^8 + (-10)*x*y^9 + y^10")
+    ),
+
+    (   "expand((a+b+c)^0)"     , "1"),
+    (   "expand((a+b+c)^1)"     , "a+b+c"),
+    (   
+        "expand((a+b+c)^2)",
+        ("(a^2 + 2*a*b + b^2) + (2*a*c + 2*b * c) + c^2")
+    )
+
+
 ]
 
 # flatten cases do not run the expected result through the parser
